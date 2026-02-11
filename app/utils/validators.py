@@ -1,4 +1,9 @@
 import re
+import unicodedata
+
+'''
+VALIDAÇÃO DE CPF E TELEFONE
+'''
 
 def normalize_phone(value: str) -> str:
     return re.sub(r"\D", "", value or "")
@@ -29,3 +34,67 @@ def is_valid_cpf(value: str) -> bool:
     d2 = 0 if d2 == 10 else d2
 
     return cpf[-2:] == f"{d1}{d2}"
+
+
+'''
+VALIDAÇÃO DE EMAIL
+'''
+
+
+_EMAIL_RE = re.compile(
+    r"^(?=.{1,254}$)"                    # tamanho total
+    r"(?=.{1,64}@)"                      # local-part <= 64
+    r"[A-Za-z0-9]"                       # começa com alfanum
+    r"(?:[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{0,62}[A-Za-z0-9])?"
+    r"@"
+    r"(?!-)"                             # domínio não começa com hífen
+    r"[A-Za-z0-9-]{1,63}"
+    r"(?:\.[A-Za-z0-9-]{1,63})+$"        # exige ao menos um ponto
+    r"$"
+)
+
+def normalize_email(raw: str) -> str:
+    """Normaliza e-mail para validação/armazenamento."""
+    if raw is None:
+        return ""
+    s = str(raw).strip()
+    s = unicodedata.normalize("NFKC", s)
+    return s.lower()
+
+def is_valid_email(raw: str) -> bool:
+    """Validação prática e robusta para e-mails comuns."""
+    email = normalize_email(raw)
+    if not email:
+        return False
+
+    if any(ch.isspace() for ch in email):
+        return False
+    if ".." in email:
+        return False
+    if email.startswith(".") or email.endswith("."):
+        return False
+
+    if not _EMAIL_RE.match(email):
+        return False
+
+    local, domain = email.rsplit("@", 1)
+    if domain.startswith(".") or domain.endswith("."):
+        return False
+    if domain.startswith("-") or domain.endswith("-"):
+        return False
+
+    return True
+
+def validate_required_email(raw: str) -> str:
+    """
+    Campo obrigatório:
+    - retorna o e-mail normalizado
+    - levanta ValueError com mensagem amigável se vazio/inválido
+    """
+    email = normalize_email(raw)
+    if email == "":
+        raise ValueError("E-mail é obrigatório.")
+    if not is_valid_email(email):
+        raise ValueError("E-mail inválido. Verifique e tente novamente.")
+    return email
+

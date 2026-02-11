@@ -6,14 +6,21 @@ class Visitor(db.Model):
     __tablename__ = "visitors"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    cpf = db.Column(db.String(16), nullable=False, unique=True, index=True)
-    phone = db.Column(db.String(20), nullable=True)  # <-- NOVO
+    name = db.Column(db.String(220), nullable=False)
 
-    # Caminho relativo em uploads/<cpf>/foto.jpg (ou timestamp, se preferir).
+    father_name = db.Column(db.String(220), nullable=True)   # opcional
+    mom_name = db.Column(db.String(220), nullable=False)     # obrigatório (corrigido)
+
+    cpf = db.Column(db.String(16), nullable=False, unique=True, index=True)
+    phone = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(254), nullable=False, unique=True, index=True)
+
+    empresa = db.Column(db.String(120), nullable=True)       # opcional
+
     photo_rel_path = db.Column(db.String(500), nullable=False)
 
     visits = db.relationship("Visit", back_populates="visitor", lazy=True)
+
 
 
 class Visit(db.Model):

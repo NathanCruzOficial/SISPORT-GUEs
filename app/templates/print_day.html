@@ -132,7 +132,7 @@
       width: 10px; height: 10px;
       border-radius: 50%;
       border: 1px solid #2a2a2a;
-      background: #2f9e44; /* verde */
+      background: #ce1919; /* vermelho */
     }
     .status-empty{
       display:inline-block;
@@ -149,7 +149,7 @@
     }
     .open-icon{
       font-weight: 700;
-      color: #0b5ed7; /* azul discreto */
+      color: #ce1919; /* vermelho */
       width: 14px;
       display: inline-block;
       text-align: center;
@@ -161,6 +161,34 @@
       border-top: 1px solid #000;
       padding-top: 6px;
     }
+
+  /* Assinatura (independente do Bootstrap) */
+  .signature-block{
+    width: 100%;
+    margin-top: 18mm;              /* espaço antes da assinatura (bom p/ A4) */
+    display: flex;
+    justify-content: center;       /* centraliza no meio da página */
+    page-break-inside: avoid;      /* evita quebrar no meio ao imprimir */
+  }
+  .signature-inner{
+    width: 120mm;                  /* “caixa” central (ajuste se quiser) */
+    text-align: center;
+  }
+  .signature-line{
+    width: 70mm;                   /* linha curta para assinar (ajuste) */
+    margin: 0 auto;
+    border-top: 2px solid #000;    /* linha visível na impressão */
+    height: 0;
+  }
+  .signature-name{
+    margin-top: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .signature-role{
+    font-size: 11px;
+  }
+
   </style>
 </head>
 
@@ -174,7 +202,7 @@
   <!-- Cabeçalho institucional -->
   <div class="doc-header">
     <!-- Troque para seu arquivo real -->
-    <img src="{{ url_for('static', filename='img/brasao.png') }}" alt="Brasão">
+    <img src="{{ url_for('static', filename='img/brasao.jpg') }}" alt="Brasão">
 
     <div class="inst-line">Ministério da Defesa</div>
     <div class="inst-line">Exército Brasileiro</div>
@@ -211,7 +239,7 @@
     </div>
 
     <div class="right">
-      Total de visitantes:
+      Total de visitas:
       <span class="mono">{{ visits|length }}</span>
     </div>
   </div>
@@ -224,6 +252,7 @@
         <th class="time-col center">Saída</th>
         <th class="dur-col center">Tempo</th>
         <th>Nome</th>
+        <th class="dur-col center">Telefone</th>
         <th class="cpf-col center">CPF</th>
         <th>Destino</th>
       </tr>
@@ -234,7 +263,7 @@
       <tr>
         <td class="status-col">
           {% if not v.check_out %}
-            <span class="status-dot" title="Ainda no aquartelamento"></span>
+            <span class="status-dot" title="Ainda no aquartelamento">X</span>
           {% else %}
             <span class="status-empty" title="Finalizado"></span>
           {% endif %}
@@ -247,14 +276,15 @@
         <td>
           <div class="name-wrap">
             {% if not v.check_out %}
-              <span class="open-icon" title="Ainda não se retirou">!</span>
+              <span class="open-icon" title="Ainda não se retirou">!!</span>
             {% else %}
-              <span class="open-icon" style="visibility:hidden;">!</span>
+              <span class="open-icon" style="visibility:hidden;">!!</span>
             {% endif %}
             <span>{{ v.visitor.name }}</span>
           </div>
         </td>
 
+        <td class="mono center">{{ v.visitor.phone }}</td>
         <td class="mono center">{{ v.visitor.cpf }}</td>
         <td>{{ v.destination }}</td>
       </tr>
@@ -263,8 +293,27 @@
   </table>
 
   <div class="footnote">
-    Documento de uso interno. Desenvolvido por Nathan da Cruz Cardoso — SD EP Cruz Aux E7 GUEs/9ª Bda Inf Mtz
+    Documento de uso interno. Desenvolvido por Nathan da Cruz Cardoso — SD EP Cruz Aux E7 GUEs/9ª Bda Inf Mtz <div class="muted">Rio de Janeiro, RJ - SISPORT V1.0 Beta </div>
   </div>
+  
+  
+  <!-- CAMPO DE Assinatura do Ch E7 -->
+
+<div class="signature-block">
+  <div class="signature-inner">
+    <div class="signature-line"></div>
+
+    <div class="signature-name">
+      NOME DO CHEFE DO E7 - Posto/Grad
+    </div>
+
+    <div class="signature-role">
+      Ch E7 ComSoc - GUEs/9ª Bda Inf Mtz
+    </div>
+  </div>
+</div>
+
+  <!-- FIM Da Assinatura do Ch E7 -->
 
   {% if not generated_at %}
   <script class="no-print">

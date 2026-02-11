@@ -1,5 +1,7 @@
 import os
 from datetime import date, datetime
+from ..utils.validators import validate_required_email
+from sqlalchemy.exc import IntegrityError
 
 from flask import (
     Blueprint,
@@ -28,7 +30,7 @@ from ..controllers.visitor_controller import (
     visitor_photo_update
 )
 from ..controllers.report_controller import day_report
-from ..utils.validators import normalize_cpf, is_valid_cpf
+from ..utils.validators import normalize_cpf, is_valid_cpf, validate_required_email
 from sqlalchemy.exc import IntegrityError
 
 visitor_bp = Blueprint("visitor", __name__)
@@ -44,6 +46,7 @@ def identify():
 def identify_post():
     raw_cpf = request.form.get("cpf", "")
     cpf = normalize_cpf(raw_cpf)
+
 
     if not is_valid_cpf(cpf):
         flash("CPF inválido. Verifique e tente novamente.", "danger")
@@ -87,10 +90,20 @@ def wizard():
 
 @visitor_bp.route("/wizard/step1", methods=["POST"])
 def wizard_step1():
-    """Etapa 1 do wizard: identificação (nome/cpf)."""
-    wizard_step1_submit(request.form.get("name", ""), request.form.get("cpf", ""), request.form.get("phone", ""))
-
+    try:
+        wizard_step1_submit(
+            request.form.get("name", ""),
+            request.form.get("father_name", ""),
+            request.form.get("mom_name", ""),
+            request.form.get("cpf", ""),
+            request.form.get("phone", ""),
+            request.form.get("email", ""),
+            request.form.get("empresa", ""),
+        )
+    except Exception as e:
+        flash(str(e), "danger")
     return redirect(url_for("visitor.wizard"))
+
 
 
 @visitor_bp.route("/wizard/step2", methods=["POST"])
@@ -119,13 +132,15 @@ def wizard_finish():
 
 @visitor_bp.route("/uploads/<path:filename>", methods=["GET"])
 def uploaded_file(filename):
-    """Serve fotos da pasta uploads/ para exibição na interface."""
     base = current_app.config["UPLOAD_FOLDER"]
-
-    # safe_join evita path traversal (../../etc/passwd)
     full = safe_join(base, filename)
+
+    # se não existir, devolve placeholder
     if not full or not os.path.isfile(full):
-        abort(404)
+        return send_from_directory(
+            os.path.join(current_app.root_path, "static", "img"),
+            "avatar-placeholder.jpg",
+        )
 
     return send_from_directory(base, filename)
 
@@ -205,7 +220,6 @@ def visitor_edit(visitor_id):
         return redirect(url_for("visitor.identify"))
     return render_template("visitor_edit.html", visitor=v)
 
-
 @visitor_bp.route("/visitors/<int:visitor_id>/edit", methods=["POST"])
 def visitor_edit_post(visitor_id):
     v = db.session.get(Visitor, visitor_id)
@@ -213,17 +227,44 @@ def visitor_edit_post(visitor_id):
         flash("Visitante não encontrado.", "warning")
         return redirect(url_for("visitor.identify"))
 
-    v.name = (request.form.get("name") or "").strip()
-    v.phone = (request.form.get("phone") or "").strip()
+    name = (request.form.get("name") or "").strip()
+    phone = (request.form.get("phone") or "").strip()
+    mom_name = (request.form.get("mom_name") or "").strip()
+    father_name = (request.form.get("father_name") or "").strip()
+    empresa = (request.form.get("empresa") or "").strip()
+
+    try:
+        email = validate_required_email(request.form.get("email", ""))
+    except ValueError as e:
+        flash(str(e), "danger")
+        return redirect(url_for("visitor.visitor_edit", visitor_id=v.id))
+
+    if not name:
+        flash("Nome é obrigatório.", "danger")
+        return redirect(url_for("visitor.visitor_edit", visitor_id=v.id))
+    if not phone:
+        flash("Telefone é obrigatório.", "danger")
+        return redirect(url_for("visitor.visitor_edit", visitor_id=v.id))
+    if not mom_name:
+        flash("Nome da mãe é obrigatório.", "danger")
+        return redirect(url_for("visitor.visitor_edit", visitor_id=v.id))
+
+    v.name = name
+    v.phone = phone
+    v.email = email
+    v.mom_name = mom_name
+    v.father_name = father_name or None
+    v.empresa = empresa or None
 
     try:
         db.session.commit()
         flash("Cadastro atualizado.", "success")
     except IntegrityError:
         db.session.rollback()
-        flash("Erro ao salvar (verifique campos duplicados/inválidos).", "danger")
+        flash("Erro ao salvar: este e-mail já está cadastrado para outro visitante.", "danger")
 
     return redirect(url_for("visitor.visitor_edit", visitor_id=v.id))
+
 
 # -----------------------------------------------------------------------------------------
 # ATUALIZAÇÃO DE FOTO (pode ser feita tanto pelo wizard quanto pela edição de visitante)

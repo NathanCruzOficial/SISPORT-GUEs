@@ -24,7 +24,7 @@
               {% if visitor.photo_rel_path %}
                 <img src="{{ url_for('visitor.uploaded_file', filename=visitor.photo_rel_path) }}?v={{ visitor.id }}" alt="Foto">
               {% else %}
-                <img src="{{ url_for('static', filename='img/avatar-placeholder.png') }}" alt="Sem foto">
+                <img src="{{ url_for('static', filename='img/avatar-placeholder.jpg') }}" alt="Sem foto">
               {% endif %}
             </div>
 
@@ -58,13 +58,33 @@
                 </div>
 
                 <div class="col-12 col-md-6">
-                  <label class="form-label">Telefone</label>
-                  <input class="form-control" name="phone" value="{{ visitor.phone or '' }}">
+                  <label class="form-label">CPF</label>
+                  <input class="form-control" value="{{ visitor.cpf }}" disabled>
                 </div>
 
                 <div class="col-12 col-md-6">
-                  <label class="form-label">CPF</label>
-                  <input class="form-control" value="{{ visitor.cpf }}" disabled>
+                  <label class="form-label">Nome da Mãe</label>
+                  <input class="form-control" name="mom_name" value="{{ visitor.mom_name or '' }}" required>
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="form-label">Nome do Pai</label>
+                  <input class="form-control" name="father_name" value="{{ visitor.father_name or '' }}" placeholder="(opcional)">
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="form-label">Telefone</label>
+                  <input class="form-control" name="phone" value="{{ visitor.phone or '' }}" required autocomplete="tel" inputmode="tel">
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="form-label">E-mail</label>
+                  <input class="form-control" type="email" name="email" value="{{ visitor.email or '' }}" required autocomplete="email">
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Empresa / Vínculo</label>
+                  <input class="form-control" name="empresa" value="{{ visitor.empresa or '' }}" placeholder="(opcional)">
                 </div>
 
                 <div class="col-12">
@@ -77,6 +97,8 @@
                 </div>
               </div>
             </form>
+
+<!-- FIM DO FORMUÁRIO -->
 
             <hr class="my-4">
 

@@ -22,7 +22,7 @@
             {% if visitor.photo_rel_path %}
               <img src="{{ url_for('visitor.uploaded_file', filename=visitor.photo_rel_path) }}?v={{ visitor.id }}" alt="Foto">
             {% else %}
-              <img src="{{ url_for('static', filename='img/avatar-placeholder.png') }}" alt="Sem foto">
+              <img src="{{ url_for('static', filename='img/avatar-placeholder.jpg') }}" alt="Sem foto">
             {% endif %}
           </div>
 
@@ -32,14 +32,32 @@
                 <div class="muted small">Nome</div>
                 <div class="fw-semibold">{{ visitor.name }}</div>
               </div>
+              <div class="col-12 col-lg-6">
+                <div class="muted small">Filiação</div>
+                <div class="fw-semibold">{{ visitor.mom_name }}</div>
+                <div class="fw-semibold">{{ visitor.father_name or "-" }}</div>
+              </div>
               <div class="col-12 col-lg-3">
                 <div class="muted small">CPF</div>
                 <div class="fw-semibold">{{ visitor.cpf }}</div>
               </div>
               <div class="col-12 col-lg-3">
                 <div class="muted small">Telefone</div>
-                <div class="fw-semibold">{{ visitor.phone or "-" }}</div>
+                <div class="fw-semibold">{{ visitor.phone }}</div>
               </div>
+              
+              {% if visitor.empresa %}
+              <div class="col-12 col-lg-3">
+                <div class="muted small">Empresa</div>
+                <div class="fw-semibold">{{ visitor.empresa}}</div>
+              </div>
+              {% endif %}
+              <div class="col-12 col-lg-3">
+                <div class="muted small">E-mail</div>
+                <div class="fw-semibold small">{{ visitor.email}}</div>
+              </div>
+              
+
             </div>
           </div>
         </div>

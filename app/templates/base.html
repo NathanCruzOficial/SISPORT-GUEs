@@ -182,12 +182,12 @@
                href="{{ url_for('visitor.identify') }}">Identificação</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint in ['visitor.report_today','visitor.open_visits'] %}active{% endif %}"
-               href="{{ url_for('visitor.report_today') }}">Registros</a>
+            <a class="nav-link {% if request.endpoint in ['visitor.wizard'] %}active{% endif %}"
+               href="{{ url_for('visitor.open_visits') }}">Abertos</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint in ['visitor.wizard'] %}active{% endif %}"
-               href="{{ url_for('visitor.wizard') }}">Novo cadastro</a>
+            <a class="nav-link {% if request.endpoint in ['visitor.report_today','visitor.open_visits'] %}active{% endif %}"
+               href="{{ url_for('visitor.report_today') }}">Registro</a>
           </li>
         </ul>
 
@@ -218,8 +218,8 @@
   <footer class="app-footer">
     <div class="container-fluid px-1 px-md-3">
       <div class="d-flex flex-column flex-md-row justify-content-between gap-1">
-        <div><strong>Desenvolvido por Nathan da Cruz Cardoso</strong></div>
-        <div class="muted">SD EP Cruz Aux E7 GUEs/9ª Bda Inf Mtz</div>
+        <div><strong>Desenvolvido por Nathan da Cruz Cardoso</strong><div class="muted">SD EP Cruz Aux E7 GUEs/9ª Bda Inf Mtz</div></div>
+        <div class="muted">Rio de Janeiro, RJ - SISPORT V1.0 Beta </div>
       </div>
     </div>
   </footer>

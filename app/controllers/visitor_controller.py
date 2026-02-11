@@ -1,8 +1,11 @@
 from datetime import datetime
+import email
 from flask import session
 from ..extensions import db
 from ..models.visitor import Visitor, Visit
 from ..services.photo_service import save_or_replace_profile_photo
+from ..utils.validators import normalize_cpf, is_valid_cpf, validate_required_email
+
 
 def find_visitor_by_cpf(cpf: str):
     """Busca visitante cadastrado pelo CPF."""
@@ -19,14 +22,51 @@ def wizard_start_for_new_visitor(cpf: str = ""):
         "step": 1,
         "name": "",
         "cpf": (cpf or "").strip(),
+        "phone": "",
+        "email": "",
+        "empresa": "",
+        "father_name": "",
+        "mom_name": "",
         "photo_rel_path": "",
     }
 
-def wizard_step1_submit(name: str, cpf: str, phone:str):
-    """Etapa 1: salva nome/CPF e vai para etapa 2."""
+def wizard_step1_submit(name: str, father_name: str, mom_name: str,
+                       cpf: str, phone: str, email: str, empresa: str):
     w = session.get("wizard") or {}
-    w.update({"name": (name or "").strip(), "cpf": (cpf or "").strip(), "phone": (phone or "").strip(), "step": 2})
+
+    name = (name or "").strip()
+    father_name = (father_name or "").strip()
+    mom_name = (mom_name or "").strip()
+
+    cpf = normalize_cpf(cpf or "")
+    if not is_valid_cpf(cpf):
+        raise ValueError("CPF inválido. Verifique e tente novamente.")
+
+    phone = (phone or "").strip()
+    if not phone:
+        raise ValueError("Telefone/Celular é obrigatório.")
+
+    email = validate_required_email(email)
+
+    empresa = (empresa or "").strip()  # opcional
+
+    if not name:
+        raise ValueError("Nome completo é obrigatório.")
+    if not mom_name:
+        raise ValueError("Nome da mãe é obrigatório.")
+
+    w.update({
+        "name": name,
+        "father_name": father_name,
+        "mom_name": mom_name,
+        "cpf": cpf,
+        "phone": phone,
+        "email": email,
+        "empresa": empresa,
+        "step": 2
+    })
     session["wizard"] = w
+
 
     
 
@@ -88,18 +128,22 @@ def create_visitor_if_not_exists_from_wizard() -> Visitor:
     """
     w = session.get("wizard") or {}
     name = (w.get("name") or "").strip()
+    father_name = (w.get("father_name") or "").strip()
+    mom_name = (w.get("mom_name") or "").strip()
     cpf = (w.get("cpf") or "").strip()
     phone = (w.get("phone") or "").strip()
+    email = (w.get("email") or "").strip()
+    empresa = (w.get("empresa") or "").strip()
     photo_rel_path = (w.get("photo_rel_path") or "").strip()
 
-    if not name or not cpf or not photo_rel_path:
-        raise ValueError("Cadastro incompleto (nome/cpf/foto).")
+    if not name or not cpf or not photo_rel_path or not phone or not email or not mom_name:
+        raise ValueError("Cadastro incompleto (nome, cpf, telefone, e-mail, nome da mãe e foto).")
 
     existing = find_visitor_by_cpf(cpf)
     if existing:
         return existing
 
-    visitor = Visitor(name=name, cpf=cpf, phone=phone, photo_rel_path=photo_rel_path)
+    visitor = Visitor(name=name, cpf=cpf, phone=phone, photo_rel_path=photo_rel_path, email=email, empresa=empresa, father_name=father_name, mom_name=mom_name)
     db.session.add(visitor)
     db.session.commit()
     return visitor

@@ -8,12 +8,14 @@
         <div class="muted">Entradas e saídas registradas no sistema.</div>
       </div>
       <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary" href="{{ url_for('visitor.identify') }}">Nova identificação</a>
-        <a class="btn btn-outline-success" href="{{ url_for('visitor.open_visits') }}">Em aberto</a>
         {% if request.endpoint == 'visitor.report_today' %}
         <a class="btn btn-primary" href="{{ url_for('visitor.report_today_print') }}">
-            <i class="bi bi-printer me-1"></i>Imprimir
-          </a>
+          <i class="bi bi-printer me-1"></i>Imprimir
+        </a>
+        <a class="btn btn-outline-success" href="{{ url_for('visitor.open_visits') }}">Em aberto</a>
+        {% else %}
+        <a class="btn btn-outline-secondary" href="{{ url_for('visitor.identify') }}">Nova identificação</a>
+        <a class="btn btn-outline-success" href="{{ url_for('visitor.report_today') }}">Registros</a>
         {% endif %}
 
       </div>
@@ -49,14 +51,18 @@
                 {% if v.visitor.photo_rel_path %}
                   <img src="{{ url_for('visitor.uploaded_file', filename=v.visitor.photo_rel_path) }}?v={{ v.visitor.id }}" alt="Foto">
                 {% else %}
-                  <img src="{{ url_for('static', filename='img/avatar-placeholder.png') }}" alt="Sem foto">
+                  <img src="{{ url_for('static', filename='img/avatar-placeholder.jpg') }}">
                 {% endif %}
               </div>
             </td>
 
             <td>
               <div class="fw-semibold">{{ v.visitor.name }}</div>
-              <div class="muted small">{{ v.visitor.cpf }}</div>
+              <div class="muted small"><i class="bi bi-person-vcard"> </i>{{ v.visitor.cpf }}</div>
+              <div class="muted small"><i class="bi bi-telephone"> </i>{{ v.visitor.phone }}</div>
+
+              
+
             </td>
 
             <td>{{ v.destination }}</td>
