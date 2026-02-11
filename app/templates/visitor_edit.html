@@ -1,126 +1,134 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="center-card">
+  <div class="card-body">
 
-<h2>Editar visitante</h2>
+    <div class="sheet">
+      <div class="sheet-header">
+        <div>
+          <h2>Ficha do Visitante</h2>
+          <div class="muted small">Edição de dados e foto</div>
+        </div>
+        <a class="btn btn-outline-secondary" href="{{ url_for('visitor.checkin_form', visitor_id=visitor.id) }}">
+          Voltar
+        </a>
+      </div>
 
-<!-- <div class="card" style="padding: 12px; margin-bottom: 12px;"> -->
-<!-- Controle da Câmera -->
-<div class="card" data-camera="1">
-  <h3>Foto</h3>
+      <div class="p-3 p-md-4">
+        <div class="row g-4">
+          <!-- Foto -->
+          <div class="col-12 col-lg-4">
+            <div class="mb-2 fw-semibold">Foto</div>
 
-  {% if visitor.photo_rel_path %}
-  <img
-    src="{{ url_for('visitor.uploaded_file', filename=visitor.photo_rel_path) }}?v={{ visitor.id }}"
-    alt="Foto do visitante"
-    style="max-width: 220px;"
-  >
-  {% endif %}
+            <div class="photo-box mb-3" style="width:160px;height:160px;">
+              {% if visitor.photo_rel_path %}
+                <img src="{{ url_for('visitor.uploaded_file', filename=visitor.photo_rel_path) }}?v={{ visitor.id }}" alt="Foto">
+              {% else %}
+                <img src="{{ url_for('static', filename='img/avatar-placeholder.png') }}" alt="Sem foto">
+              {% endif %}
+            </div>
 
+            <form method="post" action="{{ url_for('visitor.visitor_update_photo', visitor_id=visitor.id) }}">
+              <input type="hidden" name="photo_data_url" id="photo_data_url">
 
-  <img data-preview style="max-width:220px; display:none; margin-top:8px;">
+              <div class="d-grid gap-2">
+                <button type="button" class="btn btn-outline-success" id="btnOpenCam">
+                  <i class="bi bi-camera-video me-1"></i>Abrir câmera
+                </button>
+                <button type="button" class="btn btn-success" id="btnCapture" disabled>
+                  <i class="bi bi-camera me-1"></i>Capturar
+                </button>
+                <button type="submit" class="btn btn-primary" id="btnSavePhoto" disabled>
+                  <i class="bi bi-check2-circle me-1"></i>Salvar nova foto
+                </button>
+              </div>
 
-  <video autoplay playsinline style="width:320px; max-width:100%; display:none;"></video>
+              <video id="video" class="mt-3 rounded-3 border" style="width:100%; display:none;" playsinline></video>
+              <img id="preview" class="mt-3 rounded-3 border" style="width:100%; display:none;" alt="Prévia">
+            </form>
+          </div>
 
-  <form method="post" action="{{ url_for('visitor.visitor_update_photo', visitor_id=visitor.id) }}">
-    <input type="hidden" name="photo_data_url" id="photo_data_url">
-    <button type="button" data-open>Abrir câmera</button>
-    <button type="button" data-capture disabled>Capturar</button>
-    <button type="button" data-close disabled>Fechar</button>
-    <button type="submit" data-enable-on-capture disabled>Salvar nova foto</button>
-  </form>
-</div>
+          <!-- Dados -->
+          <div class="col-12 col-lg-8">
+            <form method="post" action="{{ url_for('visitor.visitor_edit_post', visitor_id=visitor.id) }}">
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label class="form-label">Nome</label>
+                  <input class="form-control" name="name" value="{{ visitor.name }}" required>
+                </div>
 
+                <div class="col-12 col-md-6">
+                  <label class="form-label">Telefone</label>
+                  <input class="form-control" name="phone" value="{{ visitor.phone or '' }}">
+                </div>
 
-<form method="post" action="{{ url_for('visitor.visitor_edit_post', visitor_id=visitor.id) }}" class="card" style="padding: 12px;">
-  <label>Nome</label>
-  <input name="name" value="{{ visitor.name }}" required />
+                <div class="col-12 col-md-6">
+                  <label class="form-label">CPF</label>
+                  <input class="form-control" value="{{ visitor.cpf }}" disabled>
+                </div>
 
-  <label>CPF</label>
-  <input value="{{ visitor.cpf }}" disabled />
+                <div class="col-12">
+                  <div class="d-flex justify-content-end gap-2 pt-2">
+                    <a class="btn btn-outline-secondary" href="{{ url_for('visitor.checkin_form', visitor_id=visitor.id) }}">
+                      Cancelar
+                    </a>
+                    <button class="btn btn-success" type="submit">Salvar ficha</button>
+                  </div>
+                </div>
+              </div>
+            </form>
 
-  <label>Telefone</label>
-  <input name="phone" value="{{ visitor.phone or '' }}" autocomplete="tel" inputmode="tel" />
+            <hr class="my-4">
 
-  <div style="margin-top: 12px; display:flex; gap:8px; flex-wrap: wrap;">
-    <button type="submit">Salvar dados</button>
-    <a href="{{ url_for('visitor.identify') }}">Voltar</a>
+            <form method="post" action="{{ url_for('visitor.visitor_delete', visitor_id=visitor.id) }}"
+                  onsubmit="return confirm('Tem certeza que deseja excluir este visitante e suas visitas?');">
+              <button class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i>Excluir visitante
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
   </div>
-</form>
+</div>
+{% endblock %}
 
-<form method="post"
-      action="{{ url_for('visitor.visitor_delete', visitor_id=visitor.id) }}"
-      style="margin-top: 12px;"
-      onsubmit="return confirm('Tem certeza que deseja excluir este cadastro? Essa ação não pode ser desfeita.');">
-  <button type="submit" style="background:#b00020; color:white;">
-    Excluir cadastro
-  </button>
-</form>
-
-<!-- <script>
-  const btnOpenCam = document.getElementById("btnOpenCam");
-  const btnCapture = document.getElementById("btnCapture");
-  const btnCloseCam = document.getElementById("btnCloseCam");
-  const btnSavePhoto = document.getElementById("btnSavePhoto");
-
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("canvas");
-  const photoData = document.getElementById("photo_data");
-
+{% block scripts %}
+<script>
+  // Recomendação: depois migrar isso para static/js/camera.js único.
+  const btnOpen = document.getElementById('btnOpenCam');
+  const btnCapture = document.getElementById('btnCapture');
+  const btnSave = document.getElementById('btnSavePhoto');
+  const video = document.getElementById('video');
+  const preview = document.getElementById('preview');
+  const input = document.getElementById('photo_data_url');
   let stream = null;
 
-  async function openCam() {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-        audio: false
-      });
-      video.srcObject = stream;
-      video.style.display = "block";
-
-      btnCapture.disabled = false;
-      btnCloseCam.disabled = false;
-    } catch (e) {
-      alert("Não foi possível acessar a câmera. Verifique permissões do navegador.");
-    }
+  async function openCam(){
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio:false });
+    video.srcObject = stream;
+    await video.play();
+    video.style.display = "block";
+    btnCapture.disabled = false;
   }
 
-  function closeCam() {
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
-    video.srcObject = null;
-    video.style.display = "none";
-
-    btnCapture.disabled = true;
-    btnCloseCam.disabled = true;
+  function capture(){
+    const c = document.createElement('canvas');
+    c.width = video.videoWidth;
+    c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    const dataUrl = c.toDataURL("image/jpeg", 0.85);
+    input.value = dataUrl;
+    preview.src = dataUrl;
+    preview.style.display = "block";
+    btnSave.disabled = false;
   }
 
-  function capture() {
-    if (!stream) return;
-
-    const w = video.videoWidth;
-    const h = video.videoHeight;
-    if (!w || !h) return;
-
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, w, h);
-
-    // JPEG reduz bem o tamanho
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-    photoData.value = dataUrl;
-
-    btnSavePhoto.disabled = false;
-  }
-
-  btnOpenCam.addEventListener("click", openCam);
-  btnCloseCam.addEventListener("click", closeCam);
-  btnCapture.addEventListener("click", capture);
-
-  // Fecha a câmera ao trocar de página
-  window.addEventListener("beforeunload", closeCam);
-</script> -->
-
+  btnOpen?.addEventListener('click', () => openCam().catch(() => alert("Sem acesso à câmera. Verifique permissões do navegador.")));
+  btnCapture?.addEventListener('click', capture);
+  window.addEventListener("beforeunload", () => stream?.getTracks().forEach(t => t.stop()));
+</script>
 {% endblock %}

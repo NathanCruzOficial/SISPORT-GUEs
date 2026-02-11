@@ -1,29 +1,282 @@
-{% extends "base.html" %}
-{% block content %}
-  <button onclick="window.print()">Imprimir</button>
-  <h1>Relação diária de visitantes — {{ today.strftime("%d/%m/%Y") }}</h1>
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documento interno - Registro de visitantes</title>
+
+  <style>
+    @page { size: A4; margin: 12mm; }
+
+    :root{
+      --line: #8a8a8a;
+      --gray-1: #f3f3f3;
+      --gray-2: #ffffff;
+      --text: #111;
+    }
+
+    body{
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    /* Barra superior (não imprime) */
+    .topbar{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .btn{
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      text-decoration: none;
+      cursor: pointer;
+      user-select: none;
+    }
+    .btn-outline-gray{
+      border: 1px solid #8b8b8b;
+      color: #333;
+      background: transparent;
+    }
+    .btn-outline-gray:hover{ background: #f2f2f2; }
+    .btn-outline-dark{
+      border: 1px solid #333;
+      color: #111;
+      background: transparent;
+    }
+    .btn-outline-dark:hover{ background: #f2f2f2; }
+
+    @media print{
+      .no-print{ display:none !important; }
+    }
+
+    /* Cabeçalho do documento */
+    .doc-header{
+      text-align: center;
+      margin-top: 6px;
+      margin-bottom: 10px;
+    }
+    .doc-header img{
+      width: 90px;
+      height: auto;
+      display: block;
+      margin: 0 auto 6px auto;
+    }
+    .inst-line{
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-size: 11px;
+      margin: 2px 0;
+    }
+    .unit-line{
+      font-weight: 700;
+      font-size: 11px;
+      margin: 2px 0;
+    }
+
+    .doc-title{
+      margin: 10px 0 6px 0;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      font-size: 12px;
+    }
+
+    .doc-meta{
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+      padding: 6px 8px;
+      margin: 8px 0 10px 0;
+      font-size: 10.5px;
+    }
+    .mono{ font-family: "Courier New", Courier, monospace; }
+
+    /* Tabela */
+    table{
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td{
+      border: 1px solid var(--line);
+      padding: 2px 6px;
+      line-height: 1.15;
+      vertical-align: middle;
+    }
+    thead th{
+      background: #e9e9e9;
+      font-weight: 700;
+      text-align: left;
+    }
+    tbody tr:nth-child(odd){ background: var(--gray-2); }
+    tbody tr:nth-child(even){ background: var(--gray-1); }
+
+    .center{ text-align:center; }
+    .right{ text-align:right; }
+
+    .status-col{ width: 18px; text-align:center; }
+    .time-col{ width: 62px; text-align:center; }
+    .dur-col{ width: 84px; text-align:center; }
+    .cpf-col{ width: 120px; text-align:center; }
+
+    .status-dot{
+      display:inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 1px solid #2a2a2a;
+      background: #2f9e44; /* verde */
+    }
+    .status-empty{
+      display:inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 1px solid #888;
+      background: transparent;
+    }
+
+    .name-wrap{
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .open-icon{
+      font-weight: 700;
+      color: #0b5ed7; /* azul discreto */
+      width: 14px;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .footnote{
+      margin-top: 10px;
+      font-size: 10px;
+      border-top: 1px solid #000;
+      padding-top: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Topbar com botões -->
+  <div class="topbar no-print">
+    <a class="btn btn-outline-dark" href="{{ url_for('visitor.report_today') }}">Voltar</a>
+    <button class="btn btn-outline-gray" onclick="window.print()">Imprimir</button>
+  </div>
+
+  <!-- Cabeçalho institucional -->
+  <div class="doc-header">
+    <!-- Troque para seu arquivo real -->
+    <img src="{{ url_for('static', filename='img/brasao.png') }}" alt="Brasão">
+
+    <div class="inst-line">Ministério da Defesa</div>
+    <div class="inst-line">Exército Brasileiro</div>
+    <div class="unit-line">Grupamento de Unidades Escola - 9ª Brigada de Infantaria Motorizada</div>
+
+    <div class="doc-title">Documento interno de registro de entrada e saída de visitantes ao aquartelamento</div>
+  </div>
+
+  {% macro dur_hms(check_in, check_out) -%}
+    {% if check_out %}
+      {% set total = (check_out - check_in).total_seconds() | int %}
+      {% set h = total // 3600 %}
+      {% set m = (total % 3600) // 60 %}
+      {% set s = total % 60 %}
+      {{ "%02d:%02d:%02d" % (h, m, s) }}
+    {% else %}
+      --
+    {% endif %}
+  {%- endmacro %}
+
+  <div class="doc-meta">
+    <div>
+      Data do documento:
+      <span class="mono">{{ today.strftime("%d/%m/%Y") }}</span>
+    </div>
+
+    <div>
+      Gerado em:
+      {% if generated_at %}
+        <span class="mono">{{ generated_at.strftime("%d/%m/%Y %H:%M") }}</span>
+      {% else %}
+        <span class="mono" id="generatedAt">--/--/---- --:--</span>
+      {% endif %}
+    </div>
+
+    <div class="right">
+      Total de visitantes:
+      <span class="mono">{{ visits|length }}</span>
+    </div>
+  </div>
+
   <table>
     <thead>
       <tr>
-        <th>Entrada</th>
-        <th>Saída</th>
+        <th class="status-col"></th>
+        <th class="time-col center">Entrada</th>
+        <th class="time-col center">Saída</th>
+        <th class="dur-col center">Tempo</th>
         <th>Nome</th>
-        <th>CPF</th>
+        <th class="cpf-col center">CPF</th>
         <th>Destino</th>
       </tr>
     </thead>
+
     <tbody>
       {% for v in visits %}
       <tr>
-        <td>{{ v.check_in.strftime("%H:%M:%S") }}</td>
-        <td>{% if v.check_out %}{{ v.check_out.strftime("%H:%M:%S") }}{% else %}-{% endif %}</td>
-        <td>{{ v.visitor.name }}</td>
-        <td>{{ v.visitor.cpf }}</td>
+        <td class="status-col">
+          {% if not v.check_out %}
+            <span class="status-dot" title="Ainda no aquartelamento"></span>
+          {% else %}
+            <span class="status-empty" title="Finalizado"></span>
+          {% endif %}
+        </td>
+
+        <td class="mono center">{{ v.check_in.strftime("%H:%M:%S") }}</td>
+        <td class="mono center">{% if v.check_out %}{{ v.check_out.strftime("%H:%M:%S") }}{% else %}--{% endif %}</td>
+        <td class="mono center">{{ dur_hms(v.check_in, v.check_out) }}</td>
+
+        <td>
+          <div class="name-wrap">
+            {% if not v.check_out %}
+              <span class="open-icon" title="Ainda não se retirou">!</span>
+            {% else %}
+              <span class="open-icon" style="visibility:hidden;">!</span>
+            {% endif %}
+            <span>{{ v.visitor.name }}</span>
+          </div>
+        </td>
+
+        <td class="mono center">{{ v.visitor.cpf }}</td>
         <td>{{ v.destination }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 
-{% endblock %}
+  <div class="footnote">
+    Documento de uso interno. Desenvolvido por Nathan da Cruz Cardoso — SD EP Cruz Aux E7 GUEs/9ª Bda Inf Mtz
+  </div>
 
+  {% if not generated_at %}
+  <script class="no-print">
+    // fallback caso você não passe generated_at pelo backend
+    (function(){
+      const el = document.getElementById("generatedAt");
+      if(!el) return;
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2,'0');
+      el.textContent = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    })();
+  </script>
+  {% endif %}
+</body>
+</html>

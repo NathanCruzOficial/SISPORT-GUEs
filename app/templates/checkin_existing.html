@@ -1,23 +1,73 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Registrar Entrada (Cadastro existente)</h1>
+<div class="center-card">
+  <div class="card-body">
 
-<div class="card">
-  <div style="display:flex; gap:16px; align-items:flex-start;">
-    <img src="{{ url_for('visitor.uploaded_file', filename=visitor.photo_rel_path) }}?v={{ visitor.id }}"
-         style="width:140px;height:140px;object-fit:cover;border-radius:12px;border:1px solid #ddd;" />
-    <div>
-      <div><strong>Nome:</strong> {{ visitor.name }}</div>
-      <div><strong>CPF:</strong> {{ visitor.cpf }}</div>
+    <div class="id-card mb-3">
+      <div class="id-card-header">
+        <div>
+          <h2 class="id-card-title">Carteira do Visitante</h2>
+          <div class="small opacity-75">Cadastro localizado</div>
+        </div>
 
-      <form method="post" style="margin-top:12px;">
-        <label>Local / Destino</label>
-        <input name="destination" required />
-        <button type="submit">Registrar Entrada</button>
-        <a href="{{ url_for('visitor.visitor_edit', visitor_id=visitor.id) }}">Editar cadastro</a>
+        <a class="icon-btn" href="{{ url_for('visitor.visitor_edit', visitor_id=visitor.id) }}"
+           title="Editar visitante" aria-label="Editar visitante">
+          <i class="bi bi-pencil-square fs-5"></i>
+        </a>
+      </div>
 
+      <div class="id-card-body">
+        <div class="d-flex gap-3 align-items-start">
+          <div class="photo-box">
+            {% if visitor.photo_rel_path %}
+              <img src="{{ url_for('visitor.uploaded_file', filename=visitor.photo_rel_path) }}?v={{ visitor.id }}" alt="Foto">
+            {% else %}
+              <img src="{{ url_for('static', filename='img/avatar-placeholder.png') }}" alt="Sem foto">
+            {% endif %}
+          </div>
+
+          <div class="flex-grow-1">
+            <div class="row g-2">
+              <div class="col-12 col-lg-6">
+                <div class="muted small">Nome</div>
+                <div class="fw-semibold">{{ visitor.name }}</div>
+              </div>
+              <div class="col-12 col-lg-3">
+                <div class="muted small">CPF</div>
+                <div class="fw-semibold">{{ visitor.cpf }}</div>
+              </div>
+              <div class="col-12 col-lg-3">
+                <div class="muted small">Telefone</div>
+                <div class="fw-semibold">{{ visitor.phone or "-" }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Destino -->
+    <div class="sheet p-3 p-md-4">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h3 class="h5 mb-0">Destino</h3>
+        <div class="muted small">Registrar entrada</div>
+      </div>
+
+      <form method="post" action="{{ url_for('visitor.checkin_form', visitor_id=visitor.id) }}">
+        <div class="row g-3 align-items-end">
+          <div class="col-12 col-md-8">
+            <label class="form-label">Para onde o visitante vai?</label>
+            <input class="form-control form-control-lg" name="destination" placeholder="Ex: Seção / Sala / Responsável" required>
+          </div>
+          <div class="col-12 col-md-4">
+            <button class="btn btn-success btn-lg w-100" type="submit">
+              Registrar visita
+            </button>
+          </div>
+        </div>
       </form>
     </div>
+
   </div>
 </div>
 {% endblock %}

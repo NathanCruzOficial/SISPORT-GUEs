@@ -1,7 +1,5 @@
 import os
-import re
-from datetime import date
-import base64
+from datetime import date, datetime
 
 from flask import (
     Blueprint,
@@ -175,12 +173,16 @@ def report_today():
         show_checkout=False,
     )
 
-
 @visitor_bp.route("/report/today/print", methods=["GET"])
 def report_today_print():
-    """Página do relatório do dia otimizada para impressão."""
     visits = day_report(date.today())
-    return render_template("print_day.html", visits=visits, today=date.today())
+    return render_template(
+        "print_day.html",
+        visits=visits,
+        today=date.today(),
+        generated_at=datetime.now(),
+    )
+
 
 
 # --------------------------------------------------------------
