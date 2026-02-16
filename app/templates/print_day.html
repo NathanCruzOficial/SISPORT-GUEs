@@ -5,6 +5,236 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Documento interno - Registro de visitantes</title>
 
+<style>
+@page {
+  @bottom-left {
+    content: "Gerado em: {{ generated_at.strftime('%d/%m/%Y %H:%M') }}";
+    /* resto... */
+  }
+}
+</style>
+
+<style>
+  @page {
+  size: A4;
+  margin: 12mm;
+
+  @bottom-center {
+    content: "Página " counter(page) " / " counter(pages);
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    color: #111;
+  }
+
+    @bottom-left {
+    content: "Gerado em: {{ generated_at.strftime('%d/%m/%Y %H:%M') }}";
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9px;
+    color: #666;
+  }
+
+}
+
+:root{
+  --line: #8a8a8a;
+  --gray-1: #f3f3f3;
+  --gray-2: #ffffff;
+  --text: #111;
+}
+
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.mono{ font-family: "Courier New", Courier, monospace; }
+.center{ text-align:center; }
+.right{ text-align:right; }
+
+.doc-header{
+  text-align: center;
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+.inst-line{
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-size: 11px;
+  margin: 2px 0;
+}
+.doc-title{
+  margin: 10px 0 6px 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  font-size: 24px;
+}
+
+/* tabela */
+table{ width:100%; border-collapse: collapse; }
+th, td{
+  border: 1px solid var(--line);
+  padding: 2px 6px;
+  line-height: 1.15;
+  vertical-align: middle;
+}
+thead{ display: table-header-group; }
+thead th{
+  background: #e9e9e9;
+  font-weight: 700;
+  text-align: left;
+}
+tbody tr:nth-child(odd){ background: var(--gray-2); }
+tbody tr:nth-child(even){ background: var(--gray-1); }
+
+tr{ page-break-inside: avoid; }
+
+.status-col{ width: 18px; text-align:center; }
+.time-col{ width: 62px; text-align:center; }
+.dur-col{ width: 84px; text-align:center; }
+.cpf-col{ width: 120px; text-align:center; }
+
+.status-dot{
+  display:inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1px solid #2a2a2a;
+  background: #ce1919;
+}
+.status-empty{
+  display:inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1px solid #888;
+  background: transparent;
+}
+
+.name-wrap{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.open-icon{
+  font-weight:700;
+  color:#ce1919;
+  width:14px;
+  display:inline-block;
+  text-align:center;
+}
+
+/* meta dentro do thead (repete) */
+.meta-row th{
+  border: 1px solid #000;
+  padding: 6px 8px;
+  background: #fff;
+  font-weight: 400;
+}
+.meta-grid{
+  display:flex;
+  justify-content: space-between;
+  gap:12px;
+  font-size:10.5px;
+}
+.meta-right{
+  margin-left:auto;
+  text-align:right;
+  white-space:nowrap;
+}
+
+/* Conferência + Vistos */
+.conf-block{
+  width: 100%;
+  margin-top: 14mm;
+  display: flex;
+  justify-content: center;
+  page-break-inside: avoid;
+}
+.conf-inner{
+  width: 180mm;
+  font-size: 11px;
+}
+.conf-title{
+  font-weight:700;
+  margin-bottom:6px;
+  text-transform: uppercase;
+}
+.conf-lines{
+  display:grid;
+  gap:6px;
+  margin-bottom:12mm;
+}
+.conf-line{
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+}
+.conf-line .lbl{ min-width:85px; }
+.conf-line .fill{
+  flex:1;
+  border-bottom:1px solid #757575;
+  height:0.9em;
+}
+.vistos{
+  display:flex;
+  justify-content: space-between;
+  gap:10mm;
+}
+.visto{
+  width:55mm;
+  border:1px solid #757575;
+  padding:6mm 5mm;
+  text-align:center;
+  box-sizing:border-box;
+}
+.visto-line{
+  border-top:2px solid #000;
+  margin:10mm auto 4mm auto;
+  width:100%;
+}
+.visto-label{ font-weight:700; margin-top:2mm; }
+
+
+</style>
+
+<style>
+  @page { 
+    size: A4; 
+    margin: 12mm 12mm 20mm 12mm; /* espaço rodapé páginas */
+  }
+  
+  /* CRÍTICO: Assinatura SEM quebra página */
+  .signature-block {
+    margin-top: 15px;           /* espaço pequeno após tabela */
+    page-break-inside: avoid;   /* NÃO quebra assinatura */
+    page-break-before: avoid;   /* NÃO quebra ANTES */
+    page-break-after: avoid;    /* NÃO quebra DEPOIS */
+  }
+  
+  /* Tabela não quebra linha no meio */
+  table { page-break-inside: auto; }
+  tr { page-break-inside: avoid; page-break-after: auto; }
+  thead { display: table-header-group; } /* cabeçalho repete */
+  
+  /* NÚMEROS PÁGINAS rodapé AUTOMÁTICO */
+  @page {
+    @bottom-center {
+      content: "Página " counter(page) " de " counter(pages);
+      font-size: 10px; font-weight: bold;
+      border-top: 1px solid #333; padding-top: 3px;
+    }
+  }
+  
+  /* Preview tela */
+  .page-indicator {
+    position: fixed; bottom: 10px; left: 10px; 
+    background: #007cba; color: white; padding: 8px; 
+    border-radius: 5px; font-size: 12px; font-weight: bold;
+  }
+</style>
+
+
   <style>
     @page { size: A4; margin: 12mm; }
 
@@ -85,7 +315,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .03em;
-      font-size: 12px;
+      font-size: 20px;
     }
 
     .doc-meta{
@@ -201,14 +431,12 @@
 
   <!-- Cabeçalho institucional -->
   <div class="doc-header">
-    <!-- Troque para seu arquivo real -->
-    <img src="{{ url_for('static', filename='img/brasao.jpg') }}" alt="Brasão">
 
     <div class="inst-line">Ministério da Defesa</div>
     <div class="inst-line">Exército Brasileiro</div>
-    <div class="unit-line">Grupamento de Unidades Escola - 9ª Brigada de Infantaria Motorizada</div>
+    <div class="inst-line">Grupamento de Unidades Escola - 9ª Brigada de Infantaria Motorizada</div>
 
-    <div class="doc-title">Documento interno de registro de entrada e saída de visitantes ao aquartelamento</div>
+    <div class="doc-title">Registro de entrada e saída de visitantes</div>
   </div>
 
   {% macro dur_hms(check_in, check_out) -%}
@@ -292,28 +520,52 @@
     </tbody>
   </table>
 
-  <div class="footnote">
-    Documento de uso interno. Desenvolvido por Nathan da Cruz Cardoso — SD EP Cruz Aux E7 GUEs/9ª Bda Inf Mtz <div class="muted">Rio de Janeiro, RJ - SISPORT V1.0 Beta </div>
-  </div>
-  
-  
-  <!-- CAMPO DE Assinatura do Ch E7 -->
+    <!-- Assinatura (nova página automática) -->
+    <div class="conf-block">
+    <div class="conf-inner">
+      <div class="conf-title">Responsável pela conferência:</div>
 
-<div class="signature-block">
-  <div class="signature-inner">
-    <div class="signature-line"></div>
+      <div class="conf-lines">
+        <div class="conf-line">
+          <span class="lbl">Nome:</span><span class="fill"></span>
+        </div>
+        <div class="conf-line">
+          <span class="lbl">Posto/Grad:</span><span class="fill"></span>
+        </div>
+        <div class="conf-line">
+          <span class="lbl">Assinatura:</span><span class="fill"></span>
+        </div>
+      </div>
 
-    <div class="signature-name">
-      NOME DO CHEFE DO E7 - Posto/Grad
+      <div class="vistos">
+        <div class="visto">
+          <div class="visto-line"></div>
+          <div class="visto-label">Visto Of Dia</div>
+        </div>
+        <div class="visto">
+          <div class="visto-line"></div>
+          <div class="visto-label">Visto Adj Of Dia</div>
+        </div>
+        <div class="visto">
+          <div class="visto-line"></div>
+          <div class="visto-label">Visto Cmt Gda</div>
+        </div>
+      </div>
     </div>
 
-    <div class="signature-role">
-      Ch E7 ComSoc - GUEs/9ª Bda Inf Mtz
-    </div>
   </div>
 </div>
 
-  <!-- FIM Da Assinatura do Ch E7 -->
+<!-- Preview páginas (só tela) -->
+<div class="page-indicator no-print">
+📄 {{ visits|length }} visitas | Impressão: {{ visits|length//25 + 1 }} páginas estimadas
+</div>
+<!-- 
+  <div class="print-date">
+  Gerado em: {{ generated_at.strftime('%d/%m/%Y %H:%M') }}
+  </div> -->
+
+
 
   {% if not generated_at %}
   <script class="no-print">

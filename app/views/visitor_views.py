@@ -188,15 +188,16 @@ def report_today():
         show_checkout=False,
     )
 
-@visitor_bp.route("/report/today/print", methods=["GET"])
+@visitor_bp.route("/report/today/print")
 def report_today_print():
-    visits = day_report(date.today())
-    return render_template(
-        "print_day.html",
-        visits=visits,
-        today=date.today(),
-        generated_at=datetime.now(),
-    )
+    today = date.today()
+    visits = db.session.query(Visit).filter(
+        db.func.date(Visit.check_in) == today
+    ).order_by(Visit.check_in.desc()).all()
+    
+    generated_at = datetime.now()
+    return render_template('print_day.html', visits=visits, today=today, generated_at=generated_at)
+
 
 
 
