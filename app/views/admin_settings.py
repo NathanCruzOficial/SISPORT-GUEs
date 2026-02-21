@@ -11,6 +11,13 @@ from app.extensions import db
 from app.models.settings import get_setting, set_setting
 from app.models.visitor import Visitor, Visit
 
+from app.utils.masking import (
+    mask_name_first_plus_initials,
+    mask_mom_name_keep_first,
+    mask_phone_last4,
+    mask_email_2first_2last_before_at,
+)
+
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
@@ -76,18 +83,23 @@ def _delete_photo_if_exists(visitor: Visitor) -> None:
         current_app.logger.exception("Falha ao remover foto: %s", abs_path)
 
 
-def _anonymize_visitor(visitor: Visitor, delete_photo: bool) -> None:
-    # Mantém ID e registros; remove identificação
-    visitor.name = "ANONIMIZADO"
-    visitor.cpf = None
-    visitor.mom_name = None
-    visitor.father_name = None
-    visitor.phone = None
-    visitor.email = None
+def _anonymize_visitor(v, delete_photo: bool) -> None:
+    # Nome do visitante: primeiro nome + iniciais
+    v.name = mask_name_first_plus_initials(v.name)
+
+    # Nome da mãe: só o primeiro nome (e não pode ser NULL)
+    v.mom_name = mask_mom_name_keep_first(v.mom_name)
+
+    # Telefone: só últimos 4
+    v.phone = mask_phone_last4(v.phone)
+
+    # Email: 2 primeiras + 2 últimas antes do @
+    v.email = mask_email_2first_2last_before_at(v.email)
 
     if delete_photo:
-        _delete_photo_if_exists(visitor)
-        visitor.photo_rel_path = None
+        _delete_photo_if_exists(v)
+        # use "" se sua coluna for NOT NULL; use None se for nullable
+        v.photo_rel_path = ""
 
 
 def retention_simulate(retention_days: int) -> int:
@@ -96,35 +108,40 @@ def retention_simulate(retention_days: int) -> int:
 
 
 def retention_run(retention_days: int, action: str, anonymize_delete_photo: bool) -> int:
-    q = _eligible_visitors_query(retention_days)
-
-    # Para evitar carregar tudo em memória em bases grandes, processe em lotes:
     affected = 0
     batch_size = 200
+    last_id = 0
 
     while True:
-        batch = q.limit(batch_size).all()
+        batch = (
+            _eligible_visitors_query(retention_days)
+            .filter(Visitor.id > last_id)
+            .order_by(Visitor.id.asc())
+            .limit(batch_size)
+            .all()
+        )
         if not batch:
             break
 
-        if action == "delete":
-            # delete: apaga visitas + visitante + foto
-            for v in batch:
+        for v in batch:
+            last_id = v.id
+
+            if action == "delete":
                 _delete_photo_if_exists(v)
                 Visit.query.filter(Visit.visitor_id == v.id).delete(synchronize_session=False)
                 db.session.delete(v)
                 affected += 1
 
-        elif action == "anonymize":
-            for v in batch:
+            elif action == "anonymize":
                 _anonymize_visitor(v, delete_photo=anonymize_delete_photo)
                 affected += 1
-        else:
-            raise ValueError("action inválida")
+            else:
+                raise ValueError("action inválida")
 
         db.session.commit()
 
     return affected
+
 
 
 @admin_bp.get("/settings")
