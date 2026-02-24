@@ -1,12 +1,67 @@
 (function () {
+  function log(...args) {
+    console.log("[camera]", ...args);
+  }
+
+  async function listVideoInputs() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter(d => d.kind === "videoinput");
+  }
+
+  function isProbablyVirtualCamera(label = "") {
+    const s = label.toLowerCase();
+    // heurística simples: ajuste se você usa OBS/NVIDIA etc.
+    return (
+      s.includes("obs") ||
+      s.includes("virtual") ||
+      s.includes("nvidia") ||
+      s.includes("broadcast") ||
+      s.includes("manycam") ||
+      s.includes("droidcam")
+    );
+  }
+
   async function openCamera(videoEl) {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-      audio: false
-    });
-    videoEl.srcObject = stream;
-    await videoEl.play();
-    return stream;
+    if (!videoEl) {
+      throw new Error("Elemento <video> não encontrado no bloco data-camera.");
+    }
+
+    // tentativa 1: bem compatível
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false
+      });
+
+      videoEl.srcObject = stream;
+      await videoEl.play();
+      return stream;
+    } catch (err1) {
+      console.error("[camera] getUserMedia attempt #1 failed:", err1?.name, err1?.message, err1);
+
+      // fallback: escolher device explicitamente (preferindo não-virtual)
+      const cams = await listVideoInputs();
+      log("videoinput devices:", cams.map(c => ({ label: c.label, id: c.deviceId })));
+
+      const preferred =
+        cams.find(c => c.label && !isProbablyVirtualCamera(c.label)) ||
+        cams[0];
+
+      if (!preferred) throw err1;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          deviceId: { exact: preferred.deviceId },
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      });
+
+      videoEl.srcObject = stream;
+      await videoEl.play();
+      return stream;
+    }
   }
 
   function stopCamera(stream) {
@@ -14,8 +69,8 @@
   }
 
   function captureToDataURL(videoEl, mime = "image/jpeg", quality = 0.85) {
-    const w = videoEl.videoWidth;
-    const h = videoEl.videoHeight;
+    const w = videoEl.videoWidth || 640;
+    const h = videoEl.videoHeight || 480;
     const canvas = document.createElement("canvas");
     canvas.width = w;
     canvas.height = h;
@@ -24,7 +79,16 @@
     return canvas.toDataURL(mime, quality);
   }
 
-  // Inicializa qualquer bloco com data-camera="1"
+  // uma única definição global
+  window.ensurePhoto = function ensurePhoto() {
+    const input = document.querySelector('[data-camera="1"] input[name="photo_data_url"]');
+    if (!input || !input.value) {
+      alert("Capture a foto antes de continuar.");
+      return false;
+    }
+    return true;
+  };
+
   window.initCameraBlocks = function initCameraBlocks() {
     document.querySelectorAll('[data-camera="1"]').forEach(block => {
       const video = block.querySelector("video");
@@ -38,21 +102,29 @@
 
       let stream = null;
 
+      // estado inicial seguro
+      if (btnCapture) btnCapture.disabled = true;
+      if (btnClose) btnClose.disabled = true;
+      if (btnEnableOnCapture) btnEnableOnCapture.disabled = true;
+
       btnOpen?.addEventListener("click", async () => {
         try {
+          stopCamera(stream);
           stream = await openCamera(video);
-          video.style.display = "block";
-          btnCapture.disabled = false;
-          btnClose.disabled = false;
-        } catch (e) {
-          alert("Não foi possível acessar a câmera. Verifique permissões do navegador.");
+
+          if (btnCapture) btnCapture.disabled = false;
+          if (btnClose) btnClose.disabled = false;
+        } catch (err) {
+          console.error("[camera] open failed:", err?.name, err?.message, err);
+          alert(`Câmera falhou: ${err?.name || "Erro"} - ${err?.message || String(err)}`);
         }
       });
 
       btnCapture?.addEventListener("click", () => {
-        if (!stream) return;
+        if (!stream || !video) return;
         const dataUrl = captureToDataURL(video);
-        input.value = dataUrl;
+
+        if (input) input.value = dataUrl;
         if (imgPreview) {
           imgPreview.src = dataUrl;
           imgPreview.style.display = "block";
@@ -63,13 +135,21 @@
       btnClose?.addEventListener("click", () => {
         stopCamera(stream);
         stream = null;
-        video.srcObject = null;
-        video.style.display = "none";
-        btnCapture.disabled = true;
-        btnClose.disabled = true;
+
+        if (video) {
+          video.pause?.();
+          video.srcObject = null;
+        }
+
+        if (btnCapture) btnCapture.disabled = true;
+        if (btnClose) btnClose.disabled = true;
       });
 
       window.addEventListener("beforeunload", () => stopCamera(stream));
     });
   };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    window.initCameraBlocks?.();
+  });
 })();

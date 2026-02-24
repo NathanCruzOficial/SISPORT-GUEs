@@ -1,35 +1,42 @@
-#define MyAppName "SISPORT"
-#define MyAppVersion "1.0.0"
-#define MyAppPublisher "SISPORT"
-#define MyAppURL "https://github.com/NathanCruzOficial/SISPORT-GUEs"
-#define MyAppExeName "SISPORT.exe"
+#define AppName "GUESVisitor"
+#define AppVersion "1.0.0"
+#define AppPublisher "Danilo"
+#define AppExeName "main.exe"
+#define BuildDir "dist\\main"
 
 [Setup]
-AppId={{2A4D6B4A-7E1F-4B7A-9A5F-2A2E1E8B8A11}}
-AppName={#MyAppName}
-AppVersion={#MyAppVersion}
-AppPublisher={#MyAppPublisher}
-AppPublisherURL={#MyAppURL}
-DefaultDirName={autopf}\{#MyAppName}
+AppId={{#AppName}
+AppName={#AppName}
+AppVersion={#AppVersion}
+AppPublisher={#AppPublisher}
+
+DefaultDirName={autopf}\{#AppName}
+DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
-OutputBaseFilename=SISPORTSetup
-Compression=lzma
+
+OutputDir=.\installer_output
+OutputBaseFilename={#AppName}-Setup-{#AppVersion}
+Compression=lzma2
 SolidCompression=yes
+WizardStyle=modern
 
-; Isso garante que o instalador não aceite instalar por cima enquanto o app estiver aberto
-CloseApplications=yes
-RestartApplications=no
+PrivilegesRequired=admin
+ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64
 
-[Files]
-; Copia TUDO do PyInstaller (onedir)
-Source: "..\dist\SISPORT\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+[Languages]
+Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Criar atalho na Área de Trabalho"; Flags: unchecked
+Name: "desktopicon"; Description: "Criar ícone na Área de Trabalho"; GroupDescription: "Atalhos:"; Flags: unchecked
+
+[Files]
+; Copia TODO o conteúdo do onedir gerado pelo PyInstaller
+Source: ".\{#BuildDir}\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
+Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Abrir {#MyAppName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExeName}"; Description: "Executar {#AppName}"; Flags: nowait postinstall skipifsilent
