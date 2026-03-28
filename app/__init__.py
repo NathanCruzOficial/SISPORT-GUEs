@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from .config import Config
 from .extensions import db
+from .utils.camera import camera
 
 # Cria e configura a aplicação Flask (factory pattern).
 def create_app():
@@ -11,12 +12,17 @@ def create_app():
     # Garante que a pasta de uploads existe.
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
+    # Inicia a câmera ao subir o servidor
+    camera.start()
+
     # Inicializa extensões.
     db.init_app(app)
 
     # Registra rotas (blueprints/views).
     from .views.visitor_views import visitor_bp
     from .views.admin_settings import admin_bp
+    from .views.system import system_bp
+    app.register_blueprint(system_bp)
     app.register_blueprint(visitor_bp)
     app.register_blueprint(admin_bp)
 

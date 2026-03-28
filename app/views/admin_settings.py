@@ -204,3 +204,7 @@ def settings_retention_run_now():
 
     affected = retention_run(retention_days, action, anonymize_delete_photo)
     return jsonify({"affected": affected})
+
+@admin_bp.get("/webcam-test")
+def webcam_test():
+    return render_template("admin/webcantest.html")

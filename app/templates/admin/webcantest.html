@@ -1,0 +1,49 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div data-camera="1">
+  <video
+    autoplay
+    muted
+    playsinline
+    style="width: 100%; max-width: 480px; display: block;"
+  ></video>
+
+  <!-- templates/identify.html -->
+  <h2>Câmera</h2>
+
+  <!-- Só uma tag img apontando para o stream -->
+  <!-- identify.html -->
+<img 
+    src="/video_feed" 
+    width="640" 
+    height="480"
+    style="border: 1px solid #ccc;"
+/>
+
+
+
+
+  <img
+    data-preview
+    style="display: none; max-width: 480px;"
+    alt="Foto capturada"
+  />
+
+  <input type="hidden" name="photo_data_url" />
+
+  <div style="display: flex; gap: 8px; margin-top: 8px;">
+    <button data-open>📷 Abrir câmera</button>
+    <button data-capture>✅ Capturar</button>
+    <button data-close>❌ Fechar</button>
+    <button data-enable-on-capture disabled>Enviar</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="/static/js/camera.js"></script>
+
+{% endblock %}
