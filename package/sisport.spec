@@ -3,13 +3,13 @@
 import os
 
 datas = [
-    ('icone.ico', '.'), 
-    ("app/templates", "app/templates"),
-    ("app/static", "app/static"),
+    ('../icone.ico', '.'), 
+    ("../app/templates", "app/templates"),
+    ("../app/static", "app/static"),
 ]
 
 a = Analysis(
-    ['main.py'],
+    ['../main.py'],
     pathex=[],
     binaries=[],
     datas=datas,
@@ -28,7 +28,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    icon='icone.ico',
+    icon='../icone.ico',
     name='sisport',
     debug=False,
     bootloader_ignore_signals=False,
