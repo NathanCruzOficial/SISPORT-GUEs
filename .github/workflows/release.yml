@@ -8,6 +8,10 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,19 +26,15 @@ jobs:
           pip install pyinstaller
 
       - name: Build (PyInstaller)
-        run: |
-          pyinstaller sisport.spec
+        run: pyinstaller sisport.spec
 
       - name: Install Inno Setup
-        run: |
-          choco install innosetup -y
+        run: choco install innosetup -y
 
-      - name: Build installer (Inno Setup)
-        run: |
-          iscc installer/sisport.iss
+      - name: Build installer
+        run: iscc installer/sisport.iss
 
-      - name: Upload installer to GitHub Release
+      - name: Upload installer
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            installer/Output/SISPORT_Setup.exe
+          files: installer_output/*.exe
