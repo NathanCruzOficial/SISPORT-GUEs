@@ -3,12 +3,13 @@
 import os
 
 datas = [
+    ('icone.ico', '.'), 
     ("app/templates", "app/templates"),
     ("app/static", "app/static"),
 ]
 
 a = Analysis(
-    ['runtime_hooks.py'],
+    ['main.py'],
     pathex=[],
     binaries=[],
     datas=datas,
@@ -27,12 +28,13 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
+    icon='icone.ico',
     name='sisport',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,     # <- padrão True
-    console=True,
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

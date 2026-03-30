@@ -22,12 +22,24 @@ import ctypes
 import logging
 import platform
 import sys
+import os
 import threading
 import time
 import webbrowser
 
 from app.paths import APP_DIR, ensure_app_dirs, log_path
 
+
+
+# ─── AppUserModelID (Desagrupa o sistema do python normal) ───
+if platform.system() == "Windows":
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("com.sisport.app")
+
+def resource_path(relative_path: str) -> str:
+    """Resolve caminho de recurso tanto em dev quanto no .exe empacotado."""
+    if getattr(sys, '_MEIPASS', False):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath('.'), relative_path)
 
 # =====================================================================
 # Inicialização de Pastas
@@ -229,6 +241,9 @@ def _run_webview_mode():
 
     log.info("Servidor pronto. Abrindo janela Webview.")
 
+    # ✅ Caminho absoluto do ícone
+    icon_path = resource_path("icone.ico")
+
     webview.create_window(
         APP_NAME,
         f"http://{HOST}:{PORT}",
@@ -237,7 +252,9 @@ def _run_webview_mode():
         resizable=True,
         fullscreen=True,
     )
-    webview.start()
+    webview.start(
+        icon=icon_path,  # ← ícone na taskbar e na janela
+    )
 
     log.info("Janela Webview fechada. Encerrando.")
 

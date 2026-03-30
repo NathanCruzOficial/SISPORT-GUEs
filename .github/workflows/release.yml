@@ -23,7 +23,7 @@ jobs:
 
       - name: Build (PyInstaller)
         run: |
-          pyinstaller build/sisport.spec
+          pyinstaller package/sisport.spec
 
       - name: Install Inno Setup
         run: |

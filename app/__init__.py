@@ -13,6 +13,7 @@ from flask import Flask
 from .config import Config
 from .extensions import db
 from app.paths import ensure_app_dirs
+from app.version import __version__, APP_NAME
 
 
 # =====================================================================
@@ -47,6 +48,13 @@ def create_app() -> Flask:
     from .views.admin_settings import admin_bp
     app.register_blueprint(visitor_bp)
     app.register_blueprint(admin_bp)
+
+    @app.context_processor
+    def inject_globals():
+        return dict(
+            app_version=__version__,
+            app_name=APP_NAME,
+        )
 
     # Cria tabelas
     with app.app_context():

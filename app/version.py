@@ -14,7 +14,7 @@
 __version__ = "1.1.0"
 
 # Nome da aplicação exibido em diálogos de atualização e interfaces.
-APP_NAME = "SISPORT - Controle de Visitantes"
+APP_NAME = "SISPORT"
 
 # Repositório GitHub no formato 'owner/repo', consultado pela API do
 # GitHub para verificar a existência de novas versões (releases).
