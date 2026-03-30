@@ -2,14 +2,17 @@
 
 import os
 
+# SPECPATH = diretório onde o .spec está (package/)
+base_dir = os.path.abspath(os.path.join(SPECPATH, '..'))
+
 datas = [
-    ('../icone.ico', '.'), 
-    ("../app/templates", "app/templates"),
-    ("../app/static", "app/static"),
+    (os.path.join(base_dir, 'icone.ico'), '.'),
+    (os.path.join(base_dir, 'app', 'templates'), 'app/templates'),
+    (os.path.join(base_dir, 'app', 'static'), 'app/static'),
 ]
 
 a = Analysis(
-    ['../main.py'],
+    [os.path.join(base_dir, 'main.py')],
     pathex=[],
     binaries=[],
     datas=datas,
@@ -28,12 +31,12 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    icon='../icone.ico',
+    icon=os.path.join(base_dir, 'icone.ico'),
     name='sisport',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False,     # <- padrão True
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
