@@ -9,7 +9,7 @@ datas = [
 ]
 
 a = Analysis(
-    ['main.py'],
+    ['../main.py'],
     pathex=[],
     binaries=[],
     datas=datas,
