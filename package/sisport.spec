@@ -2,8 +2,9 @@
 
 import os
 
-# SPECPATH = diretório onde o .spec está (package/)
-base_dir = os.path.abspath(os.path.join(SPECPATH, '..'))
+# __file__ aponta para o próprio .spec em execução
+spec_dir = os.path.dirname(os.path.abspath(__file__))
+base_dir = os.path.dirname(spec_dir)  # sobe um nível (de package/ para raiz)
 
 datas = [
     (os.path.join(base_dir, 'icone.ico'), '.'),
