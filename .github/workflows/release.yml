@@ -28,7 +28,7 @@ jobs:
       - name: Set version in version.py
         shell: bash
         run: |
-          echo '__version__ = "${{ steps.version.outputs.VERSION }}"' > app/version.py
+          sed -i 's/^__version__ = .*/__version__ = "${{ steps.version.outputs.VERSION }}"/' app/version.py
 
       - name: Install deps
         run: |
