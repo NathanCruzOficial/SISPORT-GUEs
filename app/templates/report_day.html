@@ -1,110 +1,80 @@
-<!-- =================================================================
-  templates/report.html
-  Relatório de Visitas — Listagem de entradas e saídas registradas
-  no sistema, com foto do visitante, dados pessoais, destino,
-  horários e timer de permanência em tempo real.
-
-  Este template é reutilizado por duas views diferentes:
-    - visitor.report_today  → Relatório do dia (todas as visitas)
-    - visitor.open_visits   → Apenas visitas em aberto (sem check-out)
-
-  O comportamento muda conforme o endpoint ativo:
-    - report_today: mostra botão Imprimir + link "Em aberto"
-    - open_visits:  mostra botão Nova identificação + link "Registros"
-
-  Variáveis de contexto esperadas:
-    title         (str)          — Título dinâmico da página
-    visits        (list[Visit])  — Lista de visitas, cada uma com:
-                    .id, .check_in, .check_out, .destination,
-                    .visitor.name, .visitor.cpf, .visitor.phone,
-                    .visitor.photo_rel_path, .visitor.id
-    show_checkout (bool)         — Se True, exibe coluna "Ação" com
-                                   botão "Dar saída"
-
-  Timer JS:
-    Cada linha possui um <span data-timer="1"> que exibe HH:MM:SS.
-    - Visitas abertas: timer conta em tempo real (atualiza a cada 1s)
-    - Visitas finalizadas: tempo fixo (check_out - check_in)
-
-  Extends: base.html
-  Blocos: content, scripts
-================================================================= -->
-
 {% extends "base.html" %}
 {% block content %}
 <div class="center-card">
   <div class="card-body">
 
-    <!-- ─────────────────────────────────────────────────────────────
-         Cabeçalho — Título dinâmico + botões de ação contextuais
-         Os botões mudam conforme o endpoint ativo:
-           report_today → Imprimir (PDF/A4) + Em aberto
-           open_visits  → Nova identificação + Registros
-         ───────────────────────────────────────────────────────────── -->
+    {# ── Cabeçalho ─────────────────────────────────────────────────── #}
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
       <div>
-        <h1 class="h4 mb-1">{{ title }}</h1>
+        <h1 class="h4 mb-1">
+          {{ title }}
+          {% if show_checkout %}
+            <span class="badge text-bg-success ms-2">{{ visits|length }}</span>
+          {% endif %}
+        </h1>
         <div class="muted">Entradas e saídas registradas no sistema.</div>
       </div>
-      <div class="d-flex gap-2">
+      <div class="d-flex gap-2 flex-wrap">
         {% if request.endpoint == 'visitor.report_today' %}
-        <!-- Contexto: Relatório do dia — ações de impressão e filtro -->
-        <a class="btn btn-primary" href="{{ url_for('visitor.report_today_print') }}">
-          <i class="bi bi-printer me-1"></i>Imprimir
-        </a>
-        <a class="btn btn-outline-success" href="{{ url_for('visitor.open_visits') }}">Em aberto</a>
+          <a class="btn btn-primary" href="{{ url_for('visitor.report_today_print') }}">
+            <i class="bi bi-printer me-1"></i>Imprimir
+          </a>
+          <a class="btn btn-outline-success" href="{{ url_for('visitor.open_visits') }}">Em aberto</a>
         {% else %}
-        <!-- Contexto: Visitas em aberto — ações de navegação -->
-        <a class="btn btn-outline-secondary" href="{{ url_for('visitor.identify') }}">Nova identificação</a>
-        <a class="btn btn-outline-success" href="{{ url_for('visitor.report_today') }}">Registros</a>
+          <a class="btn btn-outline-secondary" href="{{ url_for('visitor.identify') }}">
+            <i class="bi bi-arrow-left me-1"></i>Início
+          </a>
+          <a class="btn btn-outline-success" href="{{ url_for('visitor.report_today') }}">Registros</a>
         {% endif %}
       </div>
     </div>
 
-    <!-- ─────────────────────────────────────────────────────────────
-         Tabela de Visitas — Listagem principal
-         Colunas:
-           - Status    — Badge verde (dentro) ou cinza (finalizado)
-           - Foto      — Thumbnail 72×72 do visitante (ou placeholder)
-           - Visitante — Nome, CPF e telefone
-           - Destino   — Local/pessoa visitada
-           - Entrada   — Data e hora do check-in
-           - Saída     — Data e hora do check-out (ou "—")
-           - Tempo     — Timer HH:MM:SS (tempo real para abertos)
-           - Ação      — Botão "Dar saída" (só se show_checkout=True)
-         ───────────────────────────────────────────────────────────── -->
+    {# ── Barra de busca (apenas na tela de abertos) ────────────────── #}
+    {% if show_checkout %}
+    <div class="mb-3">
+      <div class="input-group">
+        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+        <input type="text"
+               id="search-visits"
+               class="form-control"
+               placeholder="Buscar por nome, CPF ou destino..."
+               autocomplete="off">
+      </div>
+    </div>
+    {% endif %}
+
+    {# ── Tabela de visitas ─────────────────────────────────────────── #}
+    {% if visits|length > 0 %}
     <div class="table-responsive">
-      <table class="table align-middle">
+      <table class="table table-hover align-middle mb-0" id="visits-table">
         <thead class="table-light">
           <tr>
             <th style="width:36px;"></th>
-            <th style="width:96px;">Foto</th>
+            <th style="width:64px;">Foto</th>
             <th>Visitante</th>
             <th>Destino</th>
             <th>Entrada</th>
             <th>Saída</th>
-            <th style="width:140px;">Tempo</th>
-            <!-- Coluna de ação exibida apenas quando show_checkout=True -->
-            {% if show_checkout %}<th class="text-end" style="width:160px;">Ação</th>{% endif %}
+            <th style="width:120px;">Tempo</th>
+            {% if show_checkout %}<th class="text-end" style="width:200px;">Ações</th>{% endif %}
           </tr>
         </thead>
         <tbody>
           {% for v in visits %}
-          <tr>
-            <!-- Status: badge verde = dentro do aquartelamento, cinza = finalizado -->
+          <tr data-searchable="{{ v.visitor.name|lower }} {{ v.visitor.cpf }} {{ v.destination|lower }}">
+            {# Status #}
             <td>
               {% if not v.check_out %}
-                <span class="badge text-bg-success" title="Dentro">●</span>
+                <span class="badge text-bg-success" title="Dentro da instalação">●</span>
               {% else %}
-                <span class="badge text-bg-secondary" title="Finalizado">●</span>
+                <span class="badge text-bg-secondary" title="Saída registrada">●</span>
               {% endif %}
             </td>
 
-            <!-- Foto do visitante (thumbnail 72×72) ou avatar placeholder -->
+            {# Foto #}
             <td>
-              <div class="photo-box" style="width:72px;height:72px;border-radius:14px;">
+              <div class="photo-box" style="width:48px;height:48px;border-radius:12px;">
                 {% if v.visitor.photo_rel_path %}
-                  <!-- ?v=ID para cache busting ao atualizar a foto -->
                   <img src="{{ url_for('visitor.uploaded_file', filename=v.visitor.photo_rel_path) }}?v={{ v.visitor.id }}" alt="Foto">
                 {% else %}
                   <img src="{{ url_for('static', filename='img/avatar-placeholder.jpg') }}">
@@ -112,35 +82,35 @@
               </div>
             </td>
 
-            <!-- Dados do visitante: nome, CPF e telefone -->
+            {# Dados do visitante #}
             <td>
               <div class="fw-semibold">{{ v.visitor.name }}</div>
-              <div class="muted small"><i class="bi bi-person-vcard"> </i>{{ v.visitor.cpf }}</div>
-              <div class="muted small"><i class="bi bi-telephone"> </i>{{ v.visitor.phone }}</div>
+              <div class="text-muted small">
+                <i class="bi bi-person-vcard"></i> {{ v.visitor.cpf }}
+              </div>
+              <div class="text-muted small">
+                <i class="bi bi-telephone"></i> {{ v.visitor.phone }}
+              </div>
             </td>
 
-            <!-- Destino da visita -->
+            {# Destino #}
             <td>{{ v.destination }}</td>
 
-            <!-- Horário de entrada (check-in) -->
-            <td>{{ v.check_in.strftime("%d/%m/%Y %H:%M:%S") }}</td>
+            {# Entrada #}
+            <td class="small">{{ v.check_in.strftime("%d/%m/%Y %H:%M:%S") }}</td>
 
-            <!-- Horário de saída (check-out) ou travessão se ainda aberta -->
-            <td>
+            {# Saída #}
+            <td class="small">
               {% if v.check_out %}
                 {{ v.check_out.strftime("%d/%m/%Y %H:%M:%S") }}
               {% else %}
-                <span class="muted">—</span>
+                <span class="text-muted">—</span>
               {% endif %}
             </td>
 
-            <!-- Timer de permanência (HH:MM:SS)
-                 data-timer="1"    → marca o elemento para o script de timer
-                 data-checkin      → ISO timestamp do check-in
-                 data-checkout     → ISO timestamp do check-out (se existir)
-                 Se data-checkout ausente, o JS conta em tempo real -->
+            {# Timer #}
             <td>
-              <span class="font-monospace"
+              <span class="font-monospace {% if not v.check_out %}text-success fw-semibold{% endif %}"
                     data-timer="1"
                     data-checkin="{{ v.check_in.isoformat() }}"
                     {% if v.check_out %}data-checkout="{{ v.check_out.isoformat() }}"{% endif %}>
@@ -148,17 +118,31 @@
               </span>
             </td>
 
-            <!-- Coluna de ação: botão "Dar saída" (POST → visitor.checkout) -->
+            {# Ações #}
             {% if show_checkout %}
             <td class="text-end">
               {% if not v.check_out %}
-              <form method="post" action="{{ url_for('visitor.checkout', visit_id=v.id) }}" class="d-inline">
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                  Dar saída
-                </button>
-              </form>
+                <div class="d-flex gap-1 justify-content-end">
+                  {# Botão Editar #}
+                  <a href="{{ url_for('visitor.visitor_edit', visitor_id=v.visitor.id) }}"
+                     class="btn btn-outline-primary btn-sm"
+                     title="Editar cadastro">
+                    <i class="bi bi-pencil-square"></i>
+                  </a>
+
+                  {# Botão Dar Saída #}
+                  <form method="post"
+                    action="{{ url_for('visitor.checkout', visit_id=v.id) }}"
+                    onsubmit="return confirmAction(event, 'Confirma a saída de {{ v.visitor.name }}?')">
+                      <button type="submit" class="btn btn-warning btn-sm">
+                          <i class="bi bi-box-arrow-right me-1"></i>Dar saída
+                      </button>
+                  </form>
+                </div>
               {% else %}
-                <span class="muted small">Finalizado</span>
+                <span class="text-muted small">
+                  <i class="bi bi-check-circle me-1"></i>Finalizado
+                </span>
               {% endif %}
             </td>
             {% endif %}
@@ -167,58 +151,47 @@
         </tbody>
       </table>
     </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+      Nenhuma visita encontrada.
+    </div>
+    {% endif %}
 
   </div>
 </div>
 {% endblock %}
 
-<!-- ─────────────────────────────────────────────────────────────────
-     Scripts — Timer de permanência em tempo real
-     Percorre todos os elementos com data-timer="1" e calcula a
-     duração entre check-in e check-out (ou momento atual).
-     Atualiza a cada 1 segundo via setInterval.
-
-     Funções:
-       pad2(n)          — Zero-padding de 2 dígitos
-       fmtDuration(ms)  — Converte milissegundos → "HH:MM:SS"
-       parseISO(s)      — Converte string ISO → Date
-       tickTimers()     — Atualiza todos os timers da tabela
-     ───────────────────────────────────────────────────────────────── -->
 {% block scripts %}
 <script>
-  /** Zero-padding: garante 2 dígitos (ex: 5 → "05") */
-  function pad2(n){ return String(n).padStart(2, "0"); }
-
-  /** Converte milissegundos em string formatada "HH:MM:SS" */
+  // ── Timer ──────────────────────────────────────────────────────────
+  function pad2(n){ return String(n).padStart(2,"0"); }
   function fmtDuration(ms){
-    ms = Math.max(0, ms);
-    const total = Math.floor(ms / 1000);
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = total % 60;
+    ms=Math.max(0,ms);
+    const t=Math.floor(ms/1000), h=Math.floor(t/3600),
+          m=Math.floor((t%3600)/60), s=t%60;
     return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
   }
-
-  /** Converte string ISO 8601 em objeto Date */
-  function parseISO(s){ return new Date(s); }
-
-  /**
-   * tickTimers — Atualiza todos os timers da tabela.
-   * Para cada <span data-timer="1">:
-   *   - Se data-checkout existe → duração fixa (checkout - checkin)
-   *   - Se data-checkout ausente → duração em tempo real (agora - checkin)
-   */
   function tickTimers(){
-    const now = Date.now();
-    document.querySelectorAll('[data-timer="1"]').forEach(el => {
-      const cin = parseISO(el.dataset.checkin).getTime();
-      const cout = el.dataset.checkout ? parseISO(el.dataset.checkout).getTime() : null;
-      el.textContent = fmtDuration((cout ?? now) - cin);
+    const now=Date.now();
+    document.querySelectorAll('[data-timer="1"]').forEach(el=>{
+      const cin=new Date(el.dataset.checkin).getTime();
+      const cout=el.dataset.checkout?new Date(el.dataset.checkout).getTime():null;
+      el.textContent=fmtDuration((cout??now)-cin);
     });
   }
+  tickTimers(); setInterval(tickTimers,1000);
 
-  /* Execução inicial + atualização a cada 1 segundo */
-  tickTimers();
-  setInterval(tickTimers, 1000);
+  // ── Busca/filtro em tempo real ─────────────────────────────────────
+  const searchInput = document.getElementById('search-visits');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const query = this.value.toLowerCase().trim();
+      document.querySelectorAll('#visits-table tbody tr').forEach(row => {
+        const text = row.getAttribute('data-searchable') || '';
+        row.style.display = text.includes(query) ? '' : 'none';
+      });
+    });
+  }
 </script>
 {% endblock %}

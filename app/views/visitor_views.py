@@ -62,10 +62,40 @@ visitor_bp = Blueprint("visitor", __name__)
 def identify():
     """
     Renderiza a tela inicial de identificação por CPF.
-
-    :return: Template 'identify.html'.
+    Inclui dados de status geral e lista de visitas em aberto.
     """
-    return render_template("identify.html")
+    from datetime import date
+
+    # Visitas em aberto (sem check-out)
+    open_list = (
+        db.session.query(Visit)
+        .filter(Visit.check_out.is_(None))
+        .order_by(Visit.check_in.desc())
+        .all()
+    )
+
+    # Contagem de visitas do dia
+    today = date.today()
+    today_visits = (
+        db.session.query(Visit)
+        .filter(db.func.date(Visit.check_in) == today)
+        .all()
+    )
+
+    # Saídas registradas hoje
+    checked_out_today = sum(1 for v in today_visits if v.check_out is not None)
+
+    # Total de visitantes cadastrados
+    total_visitors = db.session.query(Visitor).count()
+
+    return render_template(
+        "identify.html",
+        open_visits=open_list,
+        open_count=len(open_list),
+        today_count=len(today_visits),
+        checked_out_today=checked_out_today,
+        total_visitors=total_visitors,
+    )
 
 
 @visitor_bp.route("/identify", methods=["POST"])
