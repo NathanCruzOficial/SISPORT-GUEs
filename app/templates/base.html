@@ -1,28 +1,7 @@
 {# ================================================================== #}
 {# templates/base.html                                                #}
 {# Template Base (Layout Master) — Estrutura HTML compartilhada por   #}
-{# todas as páginas do SISPORT. Define:                               #}
-{#   • <head>: meta tags, Bootstrap 5 CSS/Icons, variáveis CSS e     #}
-{#     estilos globais do sistema (navbar oliva, cards, footer fixo). #}
-{#   • Navbar: logo + links de navegação (Identificação, Abertos,    #}
-{#     Registro) + botão de configurações (admin).                    #}
-{#   • Flash messages: exibição automática de alertas do Flask.       #}
-{#   • Footer fixo: créditos do desenvolvedor e versão do sistema.    #}
-{#   • Scripts globais: Bootstrap JS, IMask.js e mask.js.             #}
-{#                                                                    #}
-{# Blocos disponíveis para os templates filhos:                       #}
-{#   {% block head_extra %}  — CSS/meta adicionais no <head>.        #}
-{#   {% block content %}     — Conteúdo principal da página.          #}
-{#   {% block scripts %}     — Scripts adicionais antes do </body>.  #}
-{#                                                                    #}
-{# Dependências externas (CDN):                                       #}
-{#   • Bootstrap 5.3.3 (CSS + JS Bundle)                             #}
-{#   • Bootstrap Icons 1.11.3                                        #}
-{#   • IMask.js (última versão)                                      #}
-{#                                                                    #}
-{# Assets locais:                                                     #}
-{#   • static/img/logo.png  — Logotipo exibido na navbar.            #}
-{#   • static/js/mask.js    — Máscaras de input (CPF, tel, CNPJ).   #}
+{# todas as páginas do SISPORT.                                       #}
 {# ================================================================== #}
 
 <!doctype html>
@@ -30,41 +9,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  {# Título da página: recebe variável 'title' do template filho ou usa fallback "SISPORT" #}
   <title>{{ title or "SISPORT" }}</title>
 
-  {# ────────────────────────────────────────────────────────────────
-     CSS Externo — Bootstrap 5 + Bootstrap Icons (CDN)
-     ──────────────────────────────────────────────────────────────── #}
-    <!-- Bootstrap — LOCAL -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
+  <!-- Bootstrap — LOCAL -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
 
-    <!-- CSS do sistema -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  </head>
+  <!-- CSS do sistema -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
-  {# ────────────────────────────────────────────────────────────────
-     CSS Inline — Estilos Globais do SISPORT
-     ──────────────────────────────────────────────────────────────── #}
   <style>
-
-    /* ═════════════════════════════════════════════════════════════
-       Variáveis CSS (Design Tokens)
-       --olive / --olive-dark: paleta institucional (verde oliva)
-       --bg: cor de fundo padrão das páginas
-       ═════════════════════════════════════════════════════════════ */
     :root{
       --olive: #556B2F;
       --olive-dark: #3F5222;
       --bg: #f6f7f8;
     }
 
-    /* ═════════════════════════════════════════════════════════════
-       Layout Global — App Shell (flex column full-height)
-       Garante que o footer fique sempre na base da viewport.
-       ═════════════════════════════════════════════════════════════ */
     html, body { height: 100%; }
     body { background: var(--bg); }
 
@@ -76,12 +36,9 @@
 
     main{
       flex: 1 0 auto;
-      padding-bottom: 72px; /* espaço reservado para o footer fixo */
+      padding-bottom: 72px;
     }
 
-    /* ═════════════════════════════════════════════════════════════
-       Footer Fixo — Sempre visível na base da tela
-       ═════════════════════════════════════════════════════════════ */
     footer.app-footer{
       position: fixed;
       left: 0; right: 0; bottom: 0;
@@ -92,15 +49,12 @@
       z-index: 1030;
     }
 
-    /* ═════════════════════════════════════════════════════════════
-       Navbar — Barra de navegação superior (tema verde oliva)
-       ═════════════════════════════════════════════════════════════ */
+    /* ── Navbar ─────────────────────────────────────────────────── */
     .navbar-olive{
       background: var(--olive);
       box-shadow: 0 6px 18px rgba(0,0,0,.12);
     }
 
-    /* Logo + Título "SISPORT" */
     .brand-wrap{
       display:flex; align-items:center; gap:.75rem;
       color:#fff; text-decoration:none;
@@ -119,13 +73,13 @@
       line-height: 1;
     }
 
-    /* Links de navegação — estados hover, active, pressed */
     .nav-link{
       color: rgba(255,255,255,.92) !important;
       border-radius: 12px;
       padding: .5rem .85rem !important;
       transition: transform .12s ease, background .12s ease, color .12s ease;
       user-select: none;
+      position: relative;
     }
     .nav-link:hover{
       background: rgba(255,255,255,.12);
@@ -140,7 +94,29 @@
       font-weight: 700;
     }
 
-    /* Botão ícone (engrenagem de configurações) */
+    /* ── Badge de notificação na navbar ─────────────────────────── */
+    .nav-badge{
+      position: absolute;
+      top: 2px;
+      right: 0px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      font-size: .65rem;
+      font-weight: 700;
+      line-height: 18px;
+      text-align: center;
+      color: #fff;
+      background: #dc3545;
+      border-radius: 50px;
+      box-shadow: 0 2px 6px rgba(220,53,69,.4);
+      animation: badge-pulse 2s ease-in-out infinite;
+    }
+    @keyframes badge-pulse{
+      0%, 100% { transform: scale(1); }
+      50%      { transform: scale(1.1); }
+    }
+
     .icon-btn{
       color: #fff !important;
       border-radius: 12px;
@@ -150,10 +126,7 @@
     .icon-btn:hover{ background: rgba(255,255,255,.12); transform: translateY(-1px); }
     .icon-btn:active{ transform: translateY(0px) scale(.98); background: rgba(0,0,0,.12); }
 
-    /* ═════════════════════════════════════════════════════════════
-       Cards — Componente padrão para conteúdo centralizado
-       Usado em formulários, listagens e confirmações.
-       ═════════════════════════════════════════════════════════════ */
+    /* ── Cards ──────────────────────────────────────────────────── */
     .center-card{
       max-width: 980px;
       margin: 24px auto;
@@ -165,10 +138,7 @@
     }
     .center-card .card-body{ padding: 22px; }
 
-    /* ═════════════════════════════════════════════════════════════
-       ID Card — Carteira/identidade do visitante
-       Exibida na tela de confirmação e impressão.
-       ═════════════════════════════════════════════════════════════ */
+    /* ── ID Card ───────────────────────────────────────────────── */
     .id-card{
       border-radius: 18px;
       border: 1px solid rgba(0,0,0,.08);
@@ -201,9 +171,7 @@
     }
     .photo-box img{ width: 100%; height: 100%; object-fit: cover; display:block; }
 
-    /* ═════════════════════════════════════════════════════════════
-       Sheet — Ficha de edição/cadastro do visitante
-       ═════════════════════════════════════════════════════════════ */
+    /* ── Sheet ──────────────────────────────────────────────────── */
     .sheet{
       border-radius: 18px;
       background: #fff;
@@ -217,11 +185,9 @@
     }
     .sheet-header h2{ margin:0; font-size: 1.1rem; font-weight: 900; }
 
-    /* Utilitário — texto secundário */
     .muted{ color: #6c757d; }
   </style>
 
-  {# Bloco para CSS ou meta tags extras nos templates filhos #}
   {% block head_extra %}{% endblock %}
 </head>
 
@@ -229,48 +195,53 @@
 <div class="app-shell">
 
   {# ────────────────────────────────────────────────────────────────
-     Navbar — Navegação principal do sistema
-     Links: Identificação | Abertos | Registro | ⚙ Configurações
+     Navbar — Navegação principal
      ──────────────────────────────────────────────────────────────── #}
   <nav class="navbar navbar-expand-lg navbar-olive">
     <div class="container-fluid px-3">
 
-      {# Logo + Nome do sistema — redireciona para a tela de identificação #}
       <a class="brand-wrap" href="{{ url_for('visitor.identify') }}">
         <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo SISPORT">
         <div class="brand-title">SISPORT</div>
       </a>
 
-      {# Toggler para dispositivos móveis (hamburger menu) #}
       <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
         <span class="navbar-toggler-icon"></span>
       </button>
 
       <div class="collapse navbar-collapse" id="navMain">
 
-        {# Links de navegação com destaque condicional (classe .active) #}
         <ul class="navbar-nav ms-auto me-2 gap-1">
 
-          {# Identificação — Tela inicial de busca/cadastro por CPF #}
+          {# ── Portaria (tela inicial — identificação por CPF) ──── #}
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint in ['visitor.identify'] %}active{% endif %}"
-               href="{{ url_for('visitor.identify') }}">Identificação</a>
+               href="{{ url_for('visitor.identify') }}">
+              <i class="bi bi-door-open me-1"></i>Portaria
+            </a>
           </li>
 
-          {# Abertos — Lista de visitas em andamento (sem check-out) #}
+          {# ── No Interior (visitas em aberto — com badge) ──────── #}
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint in ['visitor.wizard'] %}active{% endif %}"
-               href="{{ url_for('visitor.open_visits') }}">Abertos</a>
+            <a class="nav-link {% if request.endpoint in ['visitor.open_visits'] %}active{% endif %}"
+               href="{{ url_for('visitor.open_visits') }}">
+              <i class="bi bi-people me-1"></i>No Interior
+              {% if open_count is defined and open_count > 0 %}
+                <span class="nav-badge">{{ open_count }}</span>
+              {% endif %}
+            </a>
           </li>
 
-          {# Registro — Relatório diário de visitas #}
+          {# ── Relatório (registro diário de visitas) ───────────── #}
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint in ['visitor.report_today','visitor.open_visits'] %}active{% endif %}"
-               href="{{ url_for('visitor.report_today') }}">Registro</a>
+            <a class="nav-link {% if request.endpoint in ['visitor.report_today'] %}active{% endif %}"
+               href="{{ url_for('visitor.report_today') }}">
+              <i class="bi bi-clipboard-data me-1"></i>Relatório
+            </a>
           </li>
         </ul>
 
-        {# Botão de configurações (admin) — ícone de engrenagem #}
+        {# Configurações (admin) #}
         <a class="icon-btn" href="{{ url_for('admin.settings_page') }}" title="Configurações" aria-label="Configurações">
           <i class="bi bi-gear-fill fs-5"></i>
         </a>
@@ -279,12 +250,11 @@
   </nav>
 
   {# ────────────────────────────────────────────────────────────────
-     Conteúdo Principal — Flash messages + bloco content
+     Conteúdo Principal
      ──────────────────────────────────────────────────────────────── #}
   <main class="container-fluid">
     <div class="px-2 px-md-4">
 
-      {# Flash Messages — Alertas automáticos do Flask (success, danger, warning, info) #}
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           <div class="mt-3">
@@ -295,47 +265,63 @@
         {% endif %}
       {% endwith %}
 
-      {# Bloco de conteúdo — sobrescrito por cada template filho #}
       {% block content %}{% endblock %}
     </div>
   </main>
 
   {# ────────────────────────────────────────────────────────────────
-     Footer Fixo — Créditos e versão do sistema
+     Footer
      ──────────────────────────────────────────────────────────────── #}
   <footer class="app-footer">
-    <div class="container-fluid px-1 px-md-3">
-      <div class="d-flex flex-column flex-md-row justify-content-between gap-1">
+    <div class="container-fluid px-3 px-md-4">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+
         <div>
-          <strong>Desenvolvido por Nathan da Cruz Cardoso</strong>
-          <div class="muted">SD EP Cruz Aux E7 GUEs/9ª Bda Inf Mtz</div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <i class="bi bi-shield-lock text-success"></i>
+            <strong>SISPORT</strong>
+            <span class="opacity-50">|</span>
+            <span class="muted small">Sistema de Portaria</span>
+          </div>
+          <div class="muted small">
+            Desenvolvido por <strong>Nathan da Cruz Cardoso</strong>
+            · SD EP Cruz — Aux E7 GUEs/9ª Bda Inf Mtz
+          </div>
         </div>
-        <div class="muted">Rio de Janeiro, RJ - {{ app_name }} V{{ app_version }}</div>
+
+        <div class="d-flex align-items-center gap-3">
+          <span class="muted small">Rio de Janeiro, RJ · {{ app_name }} V{{ app_version }}</span>
+          <a href="https://github.com/NathanCruzOficial/SISPORT-GUEs"
+             target="_blank" rel="noopener noreferrer"
+             class="d-inline-flex align-items-center gap-1 text-decoration-none text-muted"
+             title="Repositório no GitHub">
+            <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+                       0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+                       -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
+                       .07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+                       -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27
+                       .68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12
+                       .51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
+                       0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+            <span class="small fw-semibold">GitHub</span>
+          </a>
+        </div>
+
       </div>
     </div>
   </footer>
 
 </div>{# /.app-shell #}
 
-  {# ────────────────────────────────────────────────────────────────
-     Componentes Globais — Utilização do sistema.
-     ──────────────────────────────────────────────────────────────── #}
- <!-- ═══ Componentes globais ═══ -->
-    {% include 'components/confirm_modal.html' %}
+{% include 'components/confirm_modal.html' %}
 
-
-{# ──────────────────────────────────────────────────────────────────
-   Scripts Globais — Carregados em todas as páginas
-   1. Bootstrap 5 JS Bundle (Popper.js incluso)
-   2. IMask.js (biblioteca de máscaras de input)
-   3. mask.js  (configuração local das máscaras: CPF, tel, CNPJ)
-   ────────────────────────────────────────────────────────────────── #}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/imask@latest"></script>
 <script src="{{ url_for('static', filename='js/mask.js') }}"></script>
 <script src="{{ url_for('static', filename='js/confirm_modal.js') }}"></script>
 
-{# Bloco para scripts adicionais nos templates filhos #}
 {% block scripts %}{% endblock %}
 </body>
 </html>

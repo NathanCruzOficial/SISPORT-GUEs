@@ -55,6 +55,12 @@ def create_app() -> Flask:
             app_version=__version__,
             app_name=APP_NAME,
         )
+    @app.context_processor
+    def inject_open_count():
+        from .models.visitor import Visit
+        count = Visit.query.filter_by(check_out=None).count()
+        return dict(open_count=count)
+
 
     # Cria tabelas
     with app.app_context():

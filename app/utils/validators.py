@@ -140,19 +140,19 @@ def is_valid_email(raw: str) -> bool:
 
     return True
 
-def validate_required_email(raw: str) -> str:
+def validate_required_email(raw: str) -> str | None:
     """
-    Valida um e-mail como campo obrigatório. Normaliza o valor e
-    verifica se é válido; caso contrário, levanta exceção com
-    mensagem amigável para o usuário.
+    Valida e-mail como campo OPCIONAL.
+    - Se vazio/None → retorna None (aceito).
+    - Se preenchido → valida formato; se inválido, levanta ValueError.
 
     :param raw: (str) E-mail bruto informado pelo usuário.
-    :return: (str) E-mail normalizado e validado.
-    :raises ValueError: Se o e-mail estiver vazio ou for inválido.
+    :return: (str | None) E-mail normalizado ou None se vazio.
+    :raises ValueError: Se o e-mail estiver preenchido mas for inválido.
     """
     email = normalize_email(raw)
     if email == "":
-        raise ValueError("E-mail é obrigatório.")
+        return None                         # ← Campo opcional: vazio é OK
     if not is_valid_email(email):
         raise ValueError("E-mail inválido. Verifique e tente novamente.")
     return email

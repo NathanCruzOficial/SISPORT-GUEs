@@ -3,13 +3,20 @@
 <div class="center-card">
   <div class="card-body">
 
+    {# ═══════════════════════════════════════════════════════════════
+       CARTEIRA DO VISITANTE — Estilo Documento de Identidade
+       ═══════════════════════════════════════════════════════════════ #}
     <div class="id-card mb-3">
-      <div class="id-card-header">
-        <div>
-          <h2 class="id-card-title">Carteira do Visitante</h2>
-          <div class="small opacity-75">Cadastro localizado</div>
-        </div>
 
+      {# ── Cabeçalho institucional ─────────────────────────────────── #}
+      <div class="id-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-shield-lock fs-4 opacity-75"></i>
+          <div>
+            <h2 class="id-card-title mb-0">Carteira de Visitante</h2>
+            <div class="small opacity-75">SISPORT — Sistema de Portaria</div>
+          </div>
+        </div>
         <a class="icon-btn" href="{{ url_for('visitor.visitor_edit', visitor_id=visitor.id) }}"
            title="Editar visitante" aria-label="Editar visitante">
           <i class="bi bi-pencil-square fs-5"></i>
@@ -17,57 +24,149 @@
       </div>
 
       <div class="id-card-body">
-        <div class="d-flex gap-3 align-items-start">
-          <div class="photo-box">
-            {% if visitor.photo_rel_path %}
-              <img src="{{ url_for('visitor.uploaded_file', filename=visitor.photo_rel_path) }}?v={{ visitor.id }}" alt="Foto">
-            {% else %}
-              <img src="{{ url_for('static', filename='img/avatar-placeholder.jpg') }}" alt="Sem foto">
-            {% endif %}
+
+        {# ── Linha principal: Foto + Dados ─────────────────────────── #}
+        <div class="d-flex flex-column flex-sm-row gap-3 align-items-center align-items-sm-start">
+
+          {# Foto estilo 3×4 #}
+          <div class="text-center flex-shrink-0">
+            <div class="photo-box mx-auto" style="width:140px;height:170px;border-radius:8px;">
+              {% if visitor.photo_rel_path %}
+                <img src="{{ url_for('visitor.uploaded_file', filename=visitor.photo_rel_path) }}?v={{ visitor.id }}"
+                     alt="Foto" class="w-100 h-100" style="object-fit:cover;">
+              {% else %}
+                <img src="{{ url_for('static', filename='img/avatar-placeholder.jpg') }}"
+                     alt="Sem foto" class="w-100 h-100 opacity-50" style="object-fit:cover;">
+              {% endif %}
+            </div>
+            <div class="mt-2">
+              {% set cat = visitor.category|default('civil') %}
+              {% if cat == 'militar' %}
+                <span class="badge bg-success px-3 py-1"><i class="bi bi-shield-fill me-1"></i>Militar</span>
+              {% elif cat == 'ex-militar' %}
+                <span class="badge bg-warning text-dark px-3 py-1"><i class="bi bi-shield me-1"></i>Ex-Militar</span>
+              {% else %}
+                <span class="badge bg-secondary px-3 py-1"><i class="bi bi-person me-1"></i>Civil</span>
+              {% endif %}
+            </div>
           </div>
 
-          <div class="flex-grow-1">
+          {# Dados de identificação #}
+          <div class="flex-grow-1 w-100">
+
+            {# Nome em destaque #}
+            <div class="border-bottom pb-2 mb-3">
+              <div class="text-uppercase fw-bold text-muted" style="font-size:.6rem;letter-spacing:1.5px;">Nome Completo</div>
+              <div class="fw-bold fs-5">{{ visitor.name }}</div>
+            </div>
+
             <div class="row g-2">
-              <div class="col-12 col-lg-6">
-                <div class="muted small">Nome</div>
-                <div class="fw-semibold">{{ visitor.name }}</div>
-              </div>
-              <div class="col-12 col-lg-6">
-                <div class="muted small">Filiação</div>
-                <div class="fw-semibold">{{ visitor.mom_name }}</div>
-                <div class="fw-semibold">{{ visitor.father_name or "-" }}</div>
-              </div>
-              <div class="col-12 col-lg-3">
-                <div class="muted small">CPF</div>
+
+              <div class="col-6 col-lg-4">
+                <div class="text-uppercase fw-bold text-muted" style="font-size:.6rem;letter-spacing:1px;">CPF</div>
                 <div class="fw-semibold">{{ visitor.cpf }}</div>
               </div>
-              <div class="col-12 col-lg-3">
-                <div class="muted small">Telefone</div>
+
+              <div class="col-6 col-lg-4">
+                <div class="text-uppercase fw-bold text-muted" style="font-size:.6rem;letter-spacing:1px;">Telefone</div>
                 <div class="fw-semibold">{{ visitor.phone }}</div>
               </div>
-              
-              {% if visitor.empresa %}
-              <div class="col-12 col-lg-3">
-                <div class="muted small">Empresa</div>
-                <div class="fw-semibold">{{ visitor.empresa}}</div>
+
+              {% if visitor.email %}
+              <div class="col-12 col-lg-4">
+                <div class="text-uppercase fw-bold text-muted" style="font-size:.6rem;letter-spacing:1px;">E-mail</div>
+                <div class="fw-semibold small text-truncate">{{ visitor.email }}</div>
               </div>
               {% endif %}
-              <div class="col-12 col-lg-3">
-                <div class="muted small">E-mail</div>
-                <div class="fw-semibold small">{{ visitor.email}}</div>
+
+              <div class="col-12 col-lg-6">
+                <div class="text-uppercase fw-bold text-muted" style="font-size:.6rem;letter-spacing:1px;">Mãe</div>
+                <div class="fw-semibold">{{ visitor.mom_name }}</div>
               </div>
-              
+
+              {% if visitor.father_name %}
+              <div class="col-12 col-lg-6">
+                <div class="text-uppercase fw-bold text-muted" style="font-size:.6rem;letter-spacing:1px;">Pai</div>
+                <div class="fw-semibold">{{ visitor.father_name }}</div>
+              </div>
+              {% endif %}
+
+              {% if visitor.empresa %}
+              <div class="col-12">
+                <div class="text-uppercase fw-bold text-muted" style="font-size:.6rem;letter-spacing:1px;">Empresa / Vínculo</div>
+                <div class="fw-semibold">{{ visitor.empresa }}</div>
+              </div>
+              {% endif %}
 
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Destino -->
+        {# ── Barra de estatísticas ─────────────────────────────────── #}
+        {% set total_visitas = visitor.visits|length %}
+        {% set visitas_abertas = visitor.visits|selectattr('check_out', 'none')|list|length %}
+        <div class="d-flex flex-wrap gap-3 mt-4 pt-3 border-top">
+
+          {# Total de visitas #}
+          <div class="d-flex align-items-center gap-2">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10"
+                 style="width:36px;height:36px;">
+              <i class="bi bi-door-open text-success"></i>
+            </div>
+            <div>
+              <div class="text-uppercase fw-bold text-muted" style="font-size:.55rem;letter-spacing:1px;">Total de Visitas</div>
+              <div class="fw-bold">{{ total_visitas }}</div>
+            </div>
+          </div>
+
+          {# Última visita #}
+          <div class="d-flex align-items-center gap-2">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10"
+                 style="width:36px;height:36px;">
+              <i class="bi bi-calendar-check text-primary"></i>
+            </div>
+            <div>
+              <div class="text-uppercase fw-bold text-muted" style="font-size:.55rem;letter-spacing:1px;">Última Visita</div>
+              <div class="fw-bold">
+                {% if total_visitas > 0 %}
+                  {{ visitor.visits[-1].check_in.strftime('%d/%m/%Y %H:%M') }}
+                {% else %}
+                  Primeira vez
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          {# Status atual #}
+          <div class="d-flex align-items-center gap-2">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle
+                        {% if visitas_abertas > 0 %}bg-warning bg-opacity-10{% else %}bg-secondary bg-opacity-10{% endif %}"
+                 style="width:36px;height:36px;">
+              <i class="bi {% if visitas_abertas > 0 %}bi-person-walking text-warning{% else %}bi-person-check text-secondary{% endif %}"></i>
+            </div>
+            <div>
+              <div class="text-uppercase fw-bold text-muted" style="font-size:.55rem;letter-spacing:1px;">Status</div>
+              <div class="fw-bold">
+                {% if visitas_abertas > 0 %}
+                  <span class="text-warning">No interior</span>
+                {% else %}
+                  <span class="text-secondary">Fora</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>{# /id-card-body #}
+    </div>{# /id-card #}
+
+    {# ═══════════════════════════════════════════════════════════════
+       DESTINO — Registro de entrada
+       ═══════════════════════════════════════════════════════════════ #}
     <div class="sheet p-3 p-md-4">
       <div class="d-flex align-items-center justify-content-between mb-2">
-        <h3 class="h5 mb-0">Destino</h3>
+        <h3 class="h5 mb-0"><i class="bi bi-geo-alt me-1 text-success"></i>Destino</h3>
         <div class="muted small">Registrar entrada</div>
       </div>
 
@@ -75,17 +174,20 @@
         <div class="row g-3 align-items-end">
           <div class="col-12 col-md-8">
             <label class="form-label">Para onde o visitante vai?</label>
-            <input class="form-control form-control-lg" name="destination" placeholder="Ex: Seção / Sala / Responsável" required>
+            <input class="form-control form-control-lg"
+                   name="destination"
+                   placeholder="Ex: Seção / Sala / Responsável"
+                   required autofocus>
           </div>
           <div class="col-12 col-md-4">
-            <button class="btn btn-success btn-lg w-100" type="submit">
-              Registrar visita
+            <button class="btn btn-success btn-lg w-100 py-3" type="submit">
+              <i class="bi bi-check-lg me-1"></i>Registrar visita
             </button>
           </div>
         </div>
       </form>
     </div>
 
-  </div>
-</div>
+  </div>{# /card-body #}
+</div>{# /center-card #}
 {% endblock %}

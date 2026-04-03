@@ -11,8 +11,6 @@
 # ─────────────────────────────────────────────────────────────────────
 import os
 from datetime import date, datetime
-from ..utils.validators import validate_required_email
-from sqlalchemy.exc import IntegrityError
 
 from flask import (
     Blueprint,
@@ -195,7 +193,7 @@ def wizard_step1():
     Delega a validação e persistência em sessão ao controller.
 
     :input: form['name'], form['father_name'], form['mom_name'],
-            form['cpf'], form['phone'], form['email'], form['empresa'].
+            form['cpf'], form['phone'], form['email'], form['empresa'], form['category'].
     :return: Redirect para wizard (avança para etapa 2 ou exibe erro).
     """
     try:
@@ -207,6 +205,7 @@ def wizard_step1():
             request.form.get("phone", ""),
             request.form.get("email", ""),
             request.form.get("empresa", ""),
+            request.form.get("category", "civil"),    # ← NOVO
         )
     except Exception as e:
         flash(str(e), "danger")
@@ -232,24 +231,43 @@ def wizard_step2():
     return redirect(url_for("visitor.wizard"))
 
 
+# ── NOVO: Navegar para trás entre etapas ──────────────────────────
+@visitor_bp.route("/wizard/back/<int:step>", methods=["GET"])
+def wizard_back(step: int):
+    """Volta o wizard para a etapa indicada (1 ou 2), sem perder dados."""
+    w = session.get("wizard")
+    if not w:
+        return redirect(url_for("visitor.identify"))
+
+    # Só permite voltar para etapa anterior à atual
+    target = max(1, min(step, w.get("step", 1)))
+    w["step"] = target
+    session["wizard"] = w
+    return redirect(url_for("visitor.wizard"))
+
+
 @visitor_bp.route("/wizard/finish", methods=["POST"])
 def wizard_finish():
     """
     Etapa final do wizard: cria o visitante no banco (se não existir)
     e registra a primeira entrada (check-in). Limpa a sessão do wizard.
-
-    :input: form['destination'] — Local/destino da visita.
-    :return: Redirect para identify com mensagem de sucesso ou erro.
     """
     try:
         visitor = create_visitor_if_not_exists_from_wizard()
-        destination = request.form.get("destination", "")
-        visit_id = register_checkin(visitor, destination)
-        flash(f"Cadastro criado e entrada registrada (visita {visit_id}).", "success")
+        destination = request.form.get("destination", "").strip()
+
+        if destination:
+            register_checkin(visitor, destination)
+            flash("Visitante cadastrado e check-in registrado!", "success")
+        else:
+            flash("Visitante cadastrado com sucesso!", "success")
+
         session.pop("wizard", None)
-    except Exception as e:
+        return redirect(url_for("visitor.identify"))
+
+    except Exception as e:                    # ← MUDOU: era ValueError
         flash(str(e), "danger")
-    return redirect(url_for("visitor.identify"))
+        return redirect(url_for("visitor.wizard"))
 
 
 # =====================================================================
@@ -387,6 +405,7 @@ def visitor_edit_post(visitor_id):
     mom_name = (request.form.get("mom_name") or "").strip().upper()
     father_name = (request.form.get("father_name") or "").strip().upper()
     empresa = (request.form.get("empresa") or "").strip().upper()
+    category = (request.form.get("category") or "civil").strip().lower()
 
     try:
         email = validate_required_email(request.form.get("email", ""))
@@ -402,6 +421,9 @@ def visitor_edit_post(visitor_id):
         return redirect(url_for("visitor.visitor_edit", visitor_id=v.id))
     if not mom_name:
         flash("Nome da mãe é obrigatório.", "danger")
+        return redirect(url_for("visitor.visitor_edit", visitor_id=v.id))
+    if category not in ("civil", "militar", "ex-militar"):
+        flash("Categoria inválida.", "danger")
         return redirect(url_for("visitor.visitor_edit", visitor_id=v.id))
 
     # ── Verificação de duplicidade (exclui o próprio visitante) ───
@@ -425,6 +447,7 @@ def visitor_edit_post(visitor_id):
     v.mom_name = mom_name
     v.father_name = father_name or None
     v.empresa = empresa or None
+    v.category = category  
 
     try:
         db.session.commit()

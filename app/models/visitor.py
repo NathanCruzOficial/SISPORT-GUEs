@@ -47,6 +47,10 @@ class Visitor(db.Model):
     id   = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(220), nullable=False)
 
+    # ── Categoria (militar / civil / ex-militar) ─────────────────────
+    category = db.Column(db.String(20), nullable=False, default="civil")
+
+
     # ── Filiação ─────────────────────────────────────────────────────
     father_name = db.Column(db.String(220), nullable=True)    # opcional
     mom_name    = db.Column(db.String(220), nullable=False)   # obrigatório
@@ -109,6 +113,7 @@ class Visit(db.Model):
     # ── Controle de Entrada/Saída ────────────────────────────────────
     check_in  = db.Column(db.DateTime, default=datetime.now, nullable=False)
     check_out = db.Column(db.DateTime, nullable=True)
+
 
     # ─────────────────────────────────────────────────────────────────
     # Método — Verificação de Visita em Aberto
