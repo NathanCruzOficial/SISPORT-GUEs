@@ -341,10 +341,10 @@ def _check_update():
     """
     try:
         from app.updater import check_and_offer_update
-        from app.version import __version__, APP_NAME, GITHUB_REPO
+        from app.version import __version__, APP_NAME, GITHUB_REPO_ID
 
         log.info("Verificando atualizações...")
-        check_and_offer_update(__version__, GITHUB_REPO, APP_NAME)
+        check_and_offer_update(__version__, GITHUB_REPO_ID, APP_NAME)
     except Exception as e:
         log.warning(f"Falha ao verificar atualização: {e}")
 

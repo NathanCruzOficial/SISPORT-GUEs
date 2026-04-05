@@ -26,16 +26,19 @@ log = logging.getLogger("sisport.updater")
 # Funções — Comunicação com GitHub API
 # =====================================================================
 
-def _get_latest_release(repo: str) -> dict:
+def _get_latest_release(repo_id: int) -> dict:
     """
     Consulta a API do GitHub para obter os dados da release mais
-    recente de um repositório público.
+    recente de um repositório público, usando o ID numérico imutável.
 
-    :param repo: (str) Identificador do repositório no formato 'owner/repo'.
+    O endpoint /repositories/{id} funciona mesmo que o owner ou o
+    nome do repositório sejam alterados no futuro.
+
+    :param repo_id: (int) ID numérico do repositório no GitHub.
     :return: (dict) JSON da release mais recente retornado pela API.
     :raises requests.HTTPError: Se a requisição falhar (404, 403, etc.).
     """
-    url = f"https://api.github.com/repos/{repo}/releases/latest"
+    url = f"https://api.github.com/repositories/{repo_id}/releases/latest"
     r = requests.get(url, timeout=10)
     r.raise_for_status()
     return r.json()
@@ -85,26 +88,27 @@ def _download_with_progress(url: str, filename: str, progress: ProgressWindow) -
         downloaded = 0
         chunk_size = 1024 * 256  # 256 KB
 
-        for chunk in r.iter_content(chunk_size=chunk_size):
-            if not chunk:
-                continue
+        with open(file_path, "wb") as f:
+            for chunk in r.iter_content(chunk_size=chunk_size):
+                if not chunk:
+                    continue
 
-            file_path.open("ab").write(chunk)
-            downloaded += len(chunk)
+                f.write(chunk)
+                downloaded += len(chunk)
 
-            if total > 0:
-                percent = (downloaded / total) * 100
-                downloaded_mb = downloaded / (1024 * 1024)
-                total_mb = total / (1024 * 1024)
-                progress.update_progress(
-                    percent,
-                    f"Baixando atualização... {downloaded_mb:.1f} MB / {total_mb:.1f} MB",
-                )
-            else:
-                downloaded_mb = downloaded / (1024 * 1024)
-                progress.update_status(
-                    f"Baixando atualização... {downloaded_mb:.1f} MB"
-                )
+                if total > 0:
+                    percent = (downloaded / total) * 100
+                    downloaded_mb = downloaded / (1024 * 1024)
+                    total_mb = total / (1024 * 1024)
+                    progress.update_progress(
+                        percent,
+                        f"Baixando atualização... {downloaded_mb:.1f} MB / {total_mb:.1f} MB",
+                    )
+                else:
+                    downloaded_mb = downloaded / (1024 * 1024)
+                    progress.update_status(
+                        f"Baixando atualização... {downloaded_mb:.1f} MB"
+                    )
 
     log.info(f"Download concluído: {file_path}")
     return str(file_path)
@@ -115,14 +119,14 @@ def _download_with_progress(url: str, filename: str, progress: ProgressWindow) -
 # =====================================================================
 
 def check_and_offer_update(
-    current_version: str, repo: str, app_name: str
+    current_version: str, repo_id: int, app_name: str
 ) -> None:
     """
     Verifica se há uma versão mais recente no GitHub e oferece
     atualização ao usuário com feedback visual completo.
 
     Fluxo:
-        1. Consulta a release mais recente via API do GitHub.
+        1. Consulta a release mais recente via API do GitHub (por ID).
         2. Compara versões (semantic versioning).
         3. Exibe diálogo Sim/Não ao usuário.
         4. Abre janela de progresso visual.
@@ -130,7 +134,7 @@ def check_and_offer_update(
         6. Executa o instalador e encerra a aplicação.
 
     :param current_version: (str) Versão atualmente instalada (ex: '1.2.0').
-    :param repo:            (str) Repositório GitHub no formato 'owner/repo'.
+    :param repo_id:         (int) ID numérico do repositório no GitHub.
     :param app_name:        (str) Nome da aplicação para exibir nos diálogos.
     :return: None.
     """
@@ -144,7 +148,7 @@ def check_and_offer_update(
 
         # ── Consulta GitHub ──
         log.info("Verificando atualizações no GitHub...")
-        rel = _get_latest_release(repo)
+        rel = _get_latest_release(repo_id)
 
         latest = (rel.get("tag_name") or "").lstrip("v").strip()
         if not latest:

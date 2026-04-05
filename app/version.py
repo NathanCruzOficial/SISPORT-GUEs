@@ -16,6 +16,7 @@ __version__ = "1.0.0"
 # Nome da aplicação exibido em diálogos de atualização e interfaces.
 APP_NAME = "SISPORT"
 
-# Repositório GitHub no formato 'owner/repo', consultado pela API do
+# Repositório GitHub no formato 'id', consultado pela API do
 # GitHub para verificar a existência de novas versões (releases).
-GITHUB_REPO = "NathanCruzOficial/SISPORT-GUEs"
+GITHUB_REPO_ID = 1154415144
+
