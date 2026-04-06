@@ -293,11 +293,6 @@ def check_and_offer_update(
     mandatory = False  # valor padrão seguro para o bloco except
 
     try:
-        # ── Ignora versão de desenvolvimento ──
-        if current_version == "dev":
-            log.info("Versão de desenvolvimento detectada — update ignorado.")
-            return
-
         # ── Consulta GitHub ──
         log.info("Verificando atualizações no GitHub...")
         releases = _get_latest_releases(repo_id)
@@ -412,7 +407,7 @@ def check_and_offer_update(
             progress.close()
 
         error_msg = (
-            f"Não foi possível concluir a atualização.\n\n"
+            f"Não foi possível verificar por atualizações.\n\n"
             f"Erro: {e}\n\n"
         )
 
